@@ -1,7 +1,7 @@
 import database
 
 from datetime import datetime, timedelta
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request
 from flask_mongoengine import MongoEngine
 
 app = Flask(__name__)
@@ -21,10 +21,19 @@ def submit_stats():
 
 @app.route('/api/v1/popular/<string:field>/<int:days>')
 def get_devices(field='model', days=90):
-    obj = database.Statistic.objects(submit_time__gte=datetime.now()-timedelta(days))
+    obj = database.get_stats_from(days)
     return jsonify({
         'result': database.get_most_popular(obj, field)
         })
 
+
+@app.route('/')
+def index():
+    devices = database.get_stats_from(90)
+    total = len(devices)
+    return render_template('index.html', total=total, len=len,
+            devices=database.get_most_popular(devices, 'model'),
+            countries=database.get_most_popular(devices, 'country'))
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', port=3000, debug=True)
