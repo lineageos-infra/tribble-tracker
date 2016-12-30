@@ -1,7 +1,7 @@
 import database
 
 from datetime import datetime, timedelta
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request
 from flask_mongoengine import MongoEngine
 
 app = Flask(__name__)
@@ -26,5 +26,10 @@ def get_devices(field='model', days=90):
         'result': database.get_most_popular(obj, field)
         })
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', port=app.config['PORT'], debug=True)
