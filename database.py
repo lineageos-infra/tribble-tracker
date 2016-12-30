@@ -13,3 +13,6 @@ class Statistic(Document):
     submit_time = DateTimeField(default=datetime.now)
 
 
+def get_most_popular(objects, field):
+    res = objects.aggregate({ '$group': { '_id': '$' + field, 'total': { '$sum': 1 } } })
+    return sorted(list(res), key=lambda a: a['total'], reverse=True)
