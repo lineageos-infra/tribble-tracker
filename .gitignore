@@ -1,3 +1,11 @@
 app.cfg
 __pycache__
 *.pyc
+
+#virtualenv
+bin/
+lib/
+include/
+local/
+share/
+pip-selfcheck.json
