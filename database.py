@@ -12,10 +12,17 @@ class Statistic(Document):
     c_id = StringField(required=True)       #carrier_id
     t = DateTimeField(default=datetime.now) #submit_time
 
+    meta = { "indexes": ["m", "u"] }
+
     @classmethod
-    def get_most_popular(cls, objects, field):
-        res = objects.aggregate({ '$group': { '_id': '$' + cls.field_map[field], 'total': { '$sum': 1 } } })
-        return sorted(list(res), key=lambda a: a['total'], reverse=True)
+    def get_most_popular(cls, field, days):
+        res = Statistic.objects().aggregate({ '$match': { 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': { '_id': '$' + cls.field_map[field], 'total': { '$sum': 1 } }}, {'$sort': {'total': -1} })
+        return list(res)
+
+    @classmethod
+    def get_count(cls, days=90):
+        res = cls.objects(t__gte=datetime.now()-timedelta(days=days)).count()
+        return res
 
     @classmethod
     def get_stats_from(cls, days=90):

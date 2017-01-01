@@ -22,19 +22,17 @@ def submit_stats():
 @app.route('/api/v1/popular/<string:field>/<int:days>')
 @app.route('/api/v1/popular/<int:days>')
 def get_devices(field='model', days=90):
-    obj = Statistic.get_stats_from(days)
     return jsonify({
-        'result': Statistic.get_most_popular(obj, field)
+        'result': Statistic.get_most_popular(field, days)
         })
 
 
 @app.route('/')
 def index():
-    devices = Statistic.get_stats_from(90)
-    total = len(devices)
+    total = Statistic.get_count(90)
     return render_template('index.html', total=total, len=len,
-            devices=Statistic.get_most_popular(devices, 'model'),
-            countries=Statistic.get_most_popular(devices, 'country'))
+            devices=Statistic.get_most_popular('model', 90),
+            countries=Statistic.get_most_popular('country', 90))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=True)
