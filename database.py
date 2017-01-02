@@ -16,7 +16,8 @@ class Statistic(Document):
 
     @classmethod
     def get_most_popular(cls, field, days):
-        res = Statistic.objects().aggregate({ '$match': { 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': { '_id': '$' + cls.field_map[field], 'total': { '$sum': 1 } }}, {'$sort': {'total': -1} })
+        #> db.statistic.aggregate({ '$group': {'_id': '$d', 'model': { '$first': '$m'} } }, { '$group': { '_id': '$model', total: { '$sum': 1}}}, {'$sort': {'total': -1}})
+        res = Statistic.objects().aggregate({ '$match': { 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': {'_id': '$d', field: { '$first': '$' + cls.field_map[field] } } }, { '$group': { '_id': '$' + field, 'total': { '$sum': 1 } }}, {'$sort': {'total': -1} })
         return list(res)
 
     @classmethod
