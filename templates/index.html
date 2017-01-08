@@ -33,7 +33,7 @@
 				{% for i in range(len(countries)) %}
 				<div class="leaderboard-row leaderboard-row-{{ 'a' if i % 2 == 0 else 'b' }}">
 					<span class="leaderboard-left">{{i+1}}. {{ countries[i]['_id'] }}</span>
-					<span class="leaderboard-right">{{ devices[i]['total'] }}</span>
+					<span class="leaderboard-right">{{ countries[i]['total'] }}</span>
 				</div>
 				{% endfor %}
 			</div>
