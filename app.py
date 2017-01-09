@@ -25,6 +25,8 @@ def submit_stats():
 @app.route('/api/v1/popular/<int:days>')
 @cache.cached(timeout=3600)
 def get_devices(field='model', days=90):
+    if field == 'device_id':
+        return jsonify({'result': 'No!'})
     return jsonify({
         'result': Statistic.get_most_popular(field, days)
         })
