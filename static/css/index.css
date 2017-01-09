@@ -7,6 +7,10 @@ body {
 	font-size: 1.5em;
 }
 
+#content {
+	padding: 10px;
+}
+
 .aside {
 	display: inline-block;
 	padding: 10px;
@@ -21,7 +25,6 @@ body {
 }
 
 .leaderboard {
-	padding: 10px;
 	position: relative;
 	width: 100%;
 	display: inline-block;
