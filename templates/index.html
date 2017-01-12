@@ -22,10 +22,10 @@
 		<div class="pure-u-xl-1-3 pure-u-lg-1-3 pure-u-md-1 pure-u-sm-1 pure-u-1">
 			<div id="top-devices" class="leaderboard">
 				<div class="leaderboard-header">Most used devices</div>
-				{% for i in range(len(devices)) %}
-				<div class="leaderboard-row leaderboard-row-{{ 'a' if i % 2 == 0 else 'b' }}">
-					<span class="leaderboard-left">{{i+1}}. {{ devices[i]['_id'] }}</span>
-					<span class="leaderboard-right">{{ devices[i]['total'] }}</span>
+				{% for device in devices %}
+				<div class="leaderboard-row leaderboard-row-{{ 'a' if loop.index % 2 == 0 else 'b' }}">
+					<span class="leaderboard-left">{{ loop.index }}. {{ device['_id'] }}</span>
+					<span class="leaderboard-right">{{ device['total'] }}
 				</div>
 				{% endfor %}
 			</div>
@@ -35,10 +35,10 @@
 		<div class="pure-u-xl-1-3 pure-u-lg-1-3 pure-u-md-1 pure-u-sm-1 pure-u-1">
 			<div id="top-countries" class="leaderboard">
 				<div class="leaderboard-header">Most active countries</div>
-				{% for i in range(len(countries)) %}
-				<div class="leaderboard-row leaderboard-row-{{ 'a' if i % 2 == 0 else 'b' }}">
-					<span class="leaderboard-left">{{i+1}}. {{ countries[i]['_id'] }}</span>
-					<span class="leaderboard-right">{{ countries[i]['total'] }}</span>
+				{% for country in countries  if country['_id'] != "Unknown" %}
+				<div class="leaderboard-row leaderboard-row-{{ 'a' if loop.index % 2 == 0 else 'b' }}">
+					<span class="leaderboard-left">{{ loop.index }}. {{ country['_id'] }}</span>
+					<span class="leaderboard-right">{{ country['total'] }}</span>
 				</div>
 				{% endfor %}
 			</div>
