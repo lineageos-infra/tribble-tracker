@@ -22,8 +22,7 @@ class Statistic(Document):
 
     @classmethod
     def get_count(cls, days=90):
-        res = cls.objects(t__gte=datetime.now()-timedelta(days=days)).count()
-        return res
+        return cls.objects().aggregate({ '$match': { 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': { '_id': '$d' } }, { "$group": { "_id": 1, 'count': { '$sum': 1 } } }).next()['count']
 
     @classmethod
     def get_stats_from(cls, days=90):
