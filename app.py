@@ -3,7 +3,7 @@ from database import Statistic
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, render_template, request
 from flask_mongoengine import MongoEngine
-from flask_cache import Cache
+from flask_caching import Cache
 
 app = Flask(__name__)
 app.config.from_pyfile('app.cfg')
