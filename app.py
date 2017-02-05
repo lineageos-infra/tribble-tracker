@@ -8,7 +8,7 @@ from flask_cache import Cache
 app = Flask(__name__)
 app.config.from_pyfile('app.cfg')
 db = MongoEngine(app)
-cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+cache = Cache(app)
 
 @app.route('/api/v1/stats', methods=['POST'])
 def submit_stats():

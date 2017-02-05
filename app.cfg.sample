@@ -3,3 +3,5 @@ MONGODB_USERNAME = 'into'
 MONGODB_PASSWORD = 'madness'
 MONGODB_HOST = 'with'
 MONGODB_PORT = 'kittens'
+
+CACHE_TYPE = 'simple'
