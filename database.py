@@ -15,8 +15,8 @@ class Statistic(Document):
     meta = { "indexes": ["m", "u"] }
 
     @classmethod
-    def has_device(cls, device):
-        if cls.objects(m=device).first():
+    def has_thing(cls, field, value):
+        if cls.objects(**{cls.field_map[field]: value}).first():
             return True
         return False
 
@@ -35,13 +35,13 @@ class Statistic(Document):
         return cls.objects(t__gte=datetime.now()-timedelta(days=days))
 
     @classmethod
-    def get_device(cls, device, days=90):
-        #> db.statistic.aggregate({ '$match': { 'm': 'hammerhead'} }, { '$group': {'_id': '$d', 'version': { '$last': '$v'} } }, { '$group': { '_id': '$version', total: { '$sum': 1}}}, {'$sort': {'total': -1}})
+    def get_info_by_field(cls, field, value, days=90):
         out = {}
-        out['version'] = cls.objects().aggregate({ '$match': { 'm': device, 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '$d', 'version': { '$last': '$v'} } }, { '$group': { '_id': '$version', 'total': { '$sum': 1}}}, {'$sort': {'total': -1}})
-        out['country'] = cls.objects().aggregate({ '$match': { 'm': device, 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '$d', 'country': { '$last': '$u'} } }, { '$group': { '_id': '$country', 'total': { '$sum': 1}}}, {'$sort': {'total': -1}})
-        out['carrier'] = cls.objects().aggregate({ '$match': { 'm': device, 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '$d', 'carrier': { '$last': '$c'} } }, { '$group': { '_id': '$carrier', 'total': { '$sum': 1}}}, {'$sort': {'total': -1}})
-        out['total']   = cls.objects().aggregate({ '$match': { 'm': device, 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': { '_id': '$d' } }, { "$group": { "_id": 1, 'count': { '$sum': 1 } } }).next()['count']
+        out['model']   = [x for x in cls.objects().aggregate({ '$match': { cls.field_map[field]: value, 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '$d', 'models':  { '$last': '$m'} } }, { '$group': { '_id': '$models',  'total': { '$sum': 1}}}, {'$sort': {'total': -1}})]
+        out['version'] = [x for x in cls.objects().aggregate({ '$match': { cls.field_map[field]: value, 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '$d', 'version': { '$last': '$v'} } }, { '$group': { '_id': '$version', 'total': { '$sum': 1}}}, {'$sort': {'total': -1}})]
+        out['country'] = [x for x in  cls.objects().aggregate({ '$match': { cls.field_map[field]: value, 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '$d', 'country': { '$last': '$u'} } }, { '$group': { '_id': '$country', 'total': { '$sum': 1}}}, {'$sort': {'total': -1}})]
+        out['carrier'] = [x for x in cls.objects().aggregate({ '$match': { cls.field_map[field]: value, 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '$d', 'carrier': { '$last': '$c'} } }, { '$group': { '_id': '$carrier', 'total': { '$sum': 1}}}, {'$sort': {'total': -1}})]
+        out['total']   = cls.objects().aggregate({ '$match': { cls.field_map[field]: value, 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': { '_id': '$d' } }, { "$group": { "_id": 1, 'count': { '$sum': 1 } } }).next()['count']
         return out
 
     field_map = {

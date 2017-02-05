@@ -34,17 +34,29 @@ def get_devices(field='model', days=90):
 @app.route('/')
 @cache.cached(timeout=3600)
 def index():
-    total = Statistic.get_count(90)
-    return render_template('index.html', total=total, len=len,
-            devices=Statistic.get_most_popular('model', 90),
-            countries=Statistic.get_most_popular('country', 90))
+    stats = { "model": Statistic.get_most_popular('model', 90), "country": Statistic.get_most_popular("country", 90), "total": Statistic.get_count(90)}
+    return render_template('index.html', stats=stats, columns=["model", "country"])
 
-@app.route('/<string:device>')
+@app.route('/api/v1/<string:field>/<string:value>')
 @cache.cached(timeout=3600)
-def device(device):
-    if not Statistic.has_device(device):
+def api_stats_by_field(field, value):
+    '''Get stats by a specific field. Examples:
+       /model/hammerhead
+       /country/in
+       /carrier/T-Mobile
+       Each thing returns json blob'''
+    return jsonify(Statistic.get_info_by_field(field, value))
+
+@app.route('/<string:field>/<string:value>/')
+@cache.cached(timeout=3600)
+def stats_by_field(field, value):
+    valuemap = { 'model': ['version', 'country'], 'carrier': ['model', 'country'], 'version': ['model', 'country'], 'country': ['model', 'carrier'] }
+
+    if not field in ['model', 'carrier', 'version', 'country'] or not Statistic.has_thing(field, value): 
         abort(404)
-    stats = Statistic.get_device(device, 90)
-    return render_template("device.html", stats=stats, device=device)
+
+    stats = Statistic.get_info_by_field(field, value)
+    return render_template("index.html", stats=stats, columns=valuemap[field], value=value)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=True)
