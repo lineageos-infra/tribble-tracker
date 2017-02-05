@@ -1,7 +1,7 @@
 from database import Statistic
 
 from datetime import datetime, timedelta
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, abort
 from flask_mongoengine import MongoEngine
 from flask_caching import Cache
 
@@ -39,5 +39,12 @@ def index():
             devices=Statistic.get_most_popular('model', 90),
             countries=Statistic.get_most_popular('country', 90))
 
+@app.route('/<string:device>')
+@cache.cached(timeout=3600)
+def device(device):
+    if not Statistic.has_device(device):
+        abort(404)
+    stats = Statistic.get_device(device, 90)
+    return render_template("device.html", stats=stats, device=device)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=True)
