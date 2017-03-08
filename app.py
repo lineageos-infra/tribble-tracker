@@ -28,13 +28,13 @@ def get_devices(field='model', days=90):
     if field == 'device_id':
         return jsonify({'result': 'No!'})
     return jsonify({
-        'result': Statistic.get_most_popular(field, days)
+        'result': get_most_popular(field, days)
         })
 
 @app.route('/')
 @cache.cached(timeout=3600)
 def index():
-    stats = { "model": Statistic.get_most_popular('model', 90), "country": Statistic.get_most_popular("country", 90), "total": Statistic.get_count(90)}
+    stats = { "model": get_most_popular('model', 90), "country": get_most_popular("country", 90), "total": get_count(90)}
     return render_template('index.html', stats=stats, columns=["model", "country"])
 
 @app.route('/api/v1/<string:field>/<string:value>')
@@ -45,18 +45,37 @@ def api_stats_by_field(field, value):
        /country/in
        /carrier/T-Mobile
        Each thing returns json blob'''
-    return jsonify(Statistic.get_info_by_field(field, value))
+    return jsonify(get_info_by_field(field, value))
 
 @app.route('/<string:field>/<string:value>/')
 @cache.cached(timeout=3600)
 def stats_by_field(field, value):
     valuemap = { 'model': ['version', 'country'], 'carrier': ['model', 'country'], 'version': ['model', 'country'], 'country': ['model', 'carrier'] }
 
-    if not field in ['model', 'carrier', 'version', 'country'] or not Statistic.has_thing(field, value): 
+    if not field in ['model', 'carrier', 'version', 'country'] or not has_thing(field, value): 
         abort(404)
 
-    stats = Statistic.get_info_by_field(field, value)
+    stats = get_info_by_field(field, value)
     return render_template("index.html", stats=stats, columns=valuemap[field], value=value)
+
+#More caches!
+
+@cache.memoize()
+def get_most_popular(thing, count):
+    return Statistic.get_most_popular(thing, count)
+
+@cache.memoize()
+def get_count(count):
+    return Statistic.get_count(count)
+
+@cache.memoize()
+def get_info_by_field(field, value):
+    return Statistic.get_info_by_field(field, value)
+
+@cache.memoize()
+def has_thing(field, value):
+    return Statistic.has_thing(field, value)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=True)
