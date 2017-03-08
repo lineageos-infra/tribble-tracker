@@ -10,6 +10,16 @@ app.config.from_pyfile('app.cfg')
 db = MongoEngine(app)
 cache = Cache(app)
 
+force_cache_update = lambda: False
+
+@app.cli.command()
+def generate_caches():
+    global force_cache_update
+    force_cache_update = lambda: True
+    get_most_popular("model", 90)
+    get_most_popular("country", 90)
+    get_count(90)
+
 @app.route('/api/v1/stats', methods=['POST'])
 def submit_stats():
     j = request.get_json()
@@ -60,19 +70,19 @@ def stats_by_field(field, value):
 
 #More caches!
 
-@cache.memoize()
+@cache.memoize(forced_update=force_cache_update)
 def get_most_popular(thing, count):
     return Statistic.get_most_popular(thing, count)
 
-@cache.memoize()
+@cache.memoize(forced_update=force_cache_update)
 def get_count(count):
     return Statistic.get_count(count)
 
-@cache.memoize()
+@cache.memoize(forced_update=force_cache_update)
 def get_info_by_field(field, value):
     return Statistic.get_info_by_field(field, value)
 
-@cache.memoize()
+@cache.memoize(forced_update=force_cache_update)
 def has_thing(field, value):
     return Statistic.has_thing(field, value)
 
