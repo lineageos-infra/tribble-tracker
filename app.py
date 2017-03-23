@@ -10,6 +10,11 @@ app.config.from_pyfile('app.cfg')
 db = MongoEngine(app)
 cache = Cache(app)
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 force_cache_update = lambda: False
 
 @app.cli.command()
