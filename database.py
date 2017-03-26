@@ -28,7 +28,7 @@ class Statistic(Document):
 
     @classmethod
     def get_count(cls, days=90):
-        return cls.objects().aggregate({ '$match': { 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': { '_id': '$d' } }, { "$group": { "_id": 1, 'count': { '$sum': 1 } } }).next()['count']
+        return cls.objects().aggregate({ '$match': { 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': { '_id': '$d' } }, { "$group": { "_id": 1, 'count': { '$sum': 1 } } }, allowDiskUse=True).next()['count']
 
     @classmethod
     def get_stats_from(cls, days=90):
