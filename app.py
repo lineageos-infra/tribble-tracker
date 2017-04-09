@@ -5,15 +5,16 @@ from flask import Flask, jsonify, render_template, request, abort
 from flask_mongoengine import MongoEngine
 from flask_caching import Cache
 
+import click
+import codecs
+import hashlib
+import random
+import string
+
 app = Flask(__name__)
 app.config.from_pyfile('app.cfg')
 db = MongoEngine(app)
 cache = Cache(app)
-
-@app.route('/favicon.ico')
-def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 force_cache_update = lambda: False
 
@@ -24,6 +25,26 @@ def generate_caches():
     get_most_popular("model", 90)
     get_most_popular("country", 90)
     get_count(90)
+
+@app.cli.command()
+@click.argument("start")
+@click.argument("end")
+@click.argument("filename")
+@click.argument("echo", default=10000)
+def dump_json(start, end, filename, echo=10000):
+    a = datetime(*map(int, start.split("-")))
+    b = datetime(*map(int, end.split("-")))
+    counter = 0
+    salt = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(200))
+    with codecs.open(filename, 'w', 'utf-8') as f:
+        f.write("[\n")
+        for i in Statistic.objects(t__gte=a, t__lt=b).no_cache():
+            device_id = hashlib.sha256(salt.encode() + i.d.encode()).hexdigest().upper()
+            f.write(u'{{"d": "{d}", "t": "{t}", "m": "{m}", "v": "{v}", "u": "{u}"}},\n'.format(d=device_id, t=i.t.strftime("%Y%m%d %H%M"), m=i.m, v=i.v, u=i.u))
+            counter += 1
+            if counter % echo == 0:
+                print(counter)
+        f.write("]")
 
 @app.route('/api/v1/stats', methods=['POST'])
 def submit_stats():
