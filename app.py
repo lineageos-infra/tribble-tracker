@@ -61,6 +61,8 @@ def submit_stats():
 @app.route('/api/v1/popular/<int:days>')
 @cache.cached(timeout=3600)
 def get_devices(field='model', days=90):
+    if app.config['COLLECT_ONLY']:
+        return ""
     if field == 'device_id':
         return jsonify({'result': 'No!'})
     return jsonify({
@@ -70,6 +72,8 @@ def get_devices(field='model', days=90):
 @app.route('/')
 @cache.cached(timeout=3600)
 def index():
+    if app.config['COLLECT_ONLY']:
+        return "Stats are currently being collected, but we're unable to display them due to load"
     stats = { "model": get_most_popular('model', 90), "country": get_most_popular("country", 90), "total": get_count(90)}
     return render_template('index.html', stats=stats, columns=["model", "country"])
 
@@ -81,11 +85,15 @@ def api_stats_by_field(field, value):
        /country/in
        /carrier/T-Mobile
        Each thing returns json blob'''
+    if app.config['COLLECT_ONLY']:
+        return ""
     return jsonify(get_info_by_field(field, value))
 
 @app.route('/<string:field>/<string:value>/')
 @cache.cached(timeout=3600)
 def stats_by_field(field, value):
+    if app.config['COLLECT_ONLY']:
+        return ""
     valuemap = { 'model': ['version', 'country'], 'carrier': ['model', 'country'], 'version': ['model', 'country'], 'country': ['model', 'carrier'] }
 
     if not field in ['model', 'carrier', 'version', 'country'] or not has_thing(field, value): 
