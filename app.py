@@ -1,4 +1,4 @@
-from database import Statistic
+from database import Aggregate, Statistic
 
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, render_template, request, abort
@@ -49,13 +49,11 @@ def dump_json(start, end, filename, echo=10000):
 @app.route('/api/v1/stats', methods=['POST'])
 def submit_stats():
     j = request.get_json()
-    stat = Statistic(d=j['device_hash'],
-            m=j['device_name'], v=j['device_version'],
-            u=j['device_country'], c=j['device_carrier'],
-            c_id=j['device_carrier_id'])
-    stat.save()
-    print("Saved")
-    return "neat"
+    Aggregate.add_stat(d=j['device_hash'],
+                       m=j['device_name'], v=j['device_version'],
+                       u=j['device_country'], c=j['device_carrier'],
+                       c_id=j['device_carrier_id'])
+    return "", 200
 
 @app.route('/api/v1/popular/<string:field>/<int:days>')
 @app.route('/api/v1/popular/<int:days>')
@@ -75,6 +73,7 @@ def index():
     if app.config['COLLECT_ONLY']:
         return "Stats are currently being collected, but we're unable to display them due to load"
     stats = { "model": get_most_popular('model', 90), "country": get_most_popular("country", 90), "total": get_count(90)}
+    print stats
     return render_template('index.html', stats=stats, columns=["model", "country"])
 
 @app.route('/api/v1/<string:field>/<string:value>')
@@ -106,19 +105,19 @@ def stats_by_field(field, value):
 
 @cache.memoize(forced_update=force_cache_update)
 def get_most_popular(thing, count):
-    return Statistic.get_most_popular(thing, count)
+    return Aggregate.get_most_popular(thing, count)
 
 @cache.memoize(forced_update=force_cache_update)
 def get_count(count):
-    return Statistic.get_count(count)
+    return Aggregate.get_count(count)
 
 @cache.memoize(forced_update=force_cache_update)
 def get_info_by_field(field, value):
-    return Statistic.get_info_by_field(field, value)
+    return Aggregate.get_info_by_field(field, value)
 
 @cache.memoize(forced_update=force_cache_update)
 def has_thing(field, value):
-    return Statistic.has_thing(field, value)
+    return Aggregate.has_thing(field, value)
 
 
 if __name__ == '__main__':
