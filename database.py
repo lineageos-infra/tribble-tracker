@@ -52,7 +52,7 @@ class Aggregate(Document):
     @classmethod
     def migrate(cls):
         counter = 0
-        for s in Statistic.objects():
+        for s in Statistic.objects().no_cache():
             stat = cls.objects(d=s.d).first()
             if not stat or stat.t < s.t:
                 cls.objects(d=s.d).upsert_one(d=s.d, m=s.m, v=s.v, u=s.u, c=s.c, c_id=s.c_id, t=s.t).save()
