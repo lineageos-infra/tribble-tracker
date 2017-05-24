@@ -77,10 +77,6 @@ class Aggregate(Document):
         return list(res)
 
     @classmethod
-    def get_official_count(cls, days=90):
-        return cls.objects(t__gte=datetime.now()-timedelta(days=days), v=cls.official_regex).count()
-
-    @classmethod
     def get_count(cls, days=90):
         return cls.get_stats_from(days).count()
 
