@@ -1,3 +1,5 @@
+import re
+
 from datetime import datetime, timedelta
 
 from mongoengine import Document
@@ -71,6 +73,10 @@ class Aggregate(Document):
         #> db.statistic.aggregate({ '$group': {'_id': '$d', 'model': { '$first': '$m'} } }, { '$group': { '_id': '$model', total: { '$sum': 1}}}, {'$sort': {'total': -1}})
         res = cls.objects().aggregate({ '$match': { 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': {'_id': '$d', field: { '$first': '$' + cls.field_map[field] } } }, { '$group': { '_id': '$' + field, 'total': { '$sum': 1 } }}, {'$sort': {'total': -1} }, allowDiskUse=True)
         return list(res)
+
+    @classmethod
+    def get_official_count(cls, days=90):
+        return cls.objects(t__gte=datetime.now()-timedelta(days=days), v=re.compile(r"\d{2}\.\d-\d{8}-NIGHTLY-[a-z]+")).count()
 
     @classmethod
     def get_count(cls, days=90):

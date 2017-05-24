@@ -72,8 +72,7 @@ def get_devices(field='model', days=90):
 def index():
     if app.config['COLLECT_ONLY']:
         return "Stats are currently being collected, but we're unable to display them due to load"
-    stats = { "model": get_most_popular('model', 90), "country": get_most_popular("country", 90), "total": get_count(90)}
-    print stats
+    stats = { "model": get_most_popular('model', 90), "country": get_most_popular("country", 90), "total": get_count(90), "official": get_official_count(90)}
     return render_template('index.html', stats=stats, columns=["model", "country"])
 
 @app.route('/api/v1/<string:field>/<string:value>')
@@ -106,6 +105,10 @@ def stats_by_field(field, value):
 @cache.memoize(forced_update=force_cache_update)
 def get_most_popular(thing, count):
     return Aggregate.get_most_popular(thing, count)
+
+@cache.memoize(forced_update=force_cache_update)
+def get_official_count(count):
+    return Aggregate.get_official_count(count)
 
 @cache.memoize(forced_update=force_cache_update)
 def get_count(count):
