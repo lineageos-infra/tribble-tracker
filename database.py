@@ -45,6 +45,8 @@ class Aggregate(Document):
         'submit_time': 't'
     }
 
+    official_regex = re.compile(r"\d{2}\.\d-\d{8}-NIGHTLY-[a-z]+")
+
     @classmethod
     def add_stat(cls, d, m, v, u, c, c_id):
         now = datetime.now()
@@ -76,7 +78,7 @@ class Aggregate(Document):
 
     @classmethod
     def get_official_count(cls, days=90):
-        return cls.objects(t__gte=datetime.now()-timedelta(days=days), v=re.compile(r"\d{2}\.\d-\d{8}-NIGHTLY-[a-z]+")).count()
+        return cls.objects(t__gte=datetime.now()-timedelta(days=days), v=cls.official_regex).count()
 
     @classmethod
     def get_count(cls, days=90):
@@ -87,6 +89,15 @@ class Aggregate(Document):
         return cls.objects(t__gte=datetime.now()-timedelta(days=days))
 
     @classmethod
+    def get_official_count_by_field(cls, field, value, days=90):
+        kwargs = {
+            't__gte': datetime.now()-timedelta(days=days),
+            cls.field_map[field]: value,
+            'v': cls.official_regex
+        }
+        return cls.objects(**kwargs).count()
+
+    @classmethod
     def get_info_by_field(cls, field, value, days=90):
         out = {}
         out['model']   = [x for x in cls.objects().aggregate({ '$match': { cls.field_map[field]: value, 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '$d', 'models':  { '$last': '$m'} } }, { '$group': { '_id': '$models',  'total': { '$sum': 1}}}, {'$sort': {'total': -1}}, allowDiskUse=True)]
@@ -94,4 +105,5 @@ class Aggregate(Document):
         out['country'] = [x for x in  cls.objects().aggregate({ '$match': { cls.field_map[field]: value, 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '$d', 'country': { '$last': '$u'} } }, { '$group': { '_id': '$country', 'total': { '$sum': 1}}}, {'$sort': {'total': -1}}, allowDiskUse=True)]
         out['carrier'] = [x for x in cls.objects().aggregate({ '$match': { cls.field_map[field]: value, 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '$d', 'carrier': { '$last': '$c'} } }, { '$group': { '_id': '$carrier', 'total': { '$sum': 1}}}, {'$sort': {'total': -1}}, allowDiskUse=True)]
         out['total']   = cls.objects().aggregate({ '$match': { cls.field_map[field]: value, 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': { '_id': '$d' } }, { "$group": { "_id": 1, 'count': { '$sum': 1 } } }, allowDiskUse=True).next()['count']
+        out['official'] = cls.get_official_count_by_field(field, value, days)
         return out
