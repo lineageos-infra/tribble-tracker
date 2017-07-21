@@ -3,8 +3,9 @@ from database import Aggregate, Statistic
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, render_template, request, abort
 from flask_mongoengine import MongoEngine
-from flask_caching import Cache
+from flask_redis import FlaskRedis
 
+import ast
 import click
 import codecs
 import hashlib
@@ -14,17 +15,7 @@ import string
 app = Flask(__name__)
 app.config.from_pyfile('app.cfg')
 db = MongoEngine(app)
-cache = Cache(app)
-
-force_cache_update = lambda: False
-
-@app.cli.command()
-def generate_caches():
-    global force_cache_update
-    force_cache_update = lambda: True
-    get_most_popular("model", 90)
-    get_most_popular("country", 90)
-    get_count(90)
+redis_cache = FlaskRedis(app)
 
 @app.cli.command()
 @click.argument("start")
@@ -46,6 +37,24 @@ def dump_json(start, end, filename, echo=10000):
                 print(counter)
         f.write("]")
 
+@app.cli.command()
+def generate_caches():
+    #main page
+    print("Generating cache/main")
+    stats = { "model": Aggregate.get_most_popular('model', 90), "country": Aggregate.get_most_popular("country", 90), "total": Aggregate.get_count(90)}
+    template = render_template('index.html', stats=stats, columns=["model", "country"], date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
+    redis_cache.set("cache/main", template)
+    #field pages
+    for field in ['model', 'carrier', 'version', 'country']:
+        print("Generating cache/popular/{}".format(field))
+        redis_cache.set("cache/popular/{}".format(field), Aggregate.get_most_popular(field, 90))
+        for value in Aggregate.get_field(field, 90):
+            print("Generating cache/{}/{}".format(field, value))
+            try:
+                redis_cache.set("cache/{}/{}".format(field, value), Aggregate.get_info_by_field(field, value))
+            except Exception as e:
+                print(e.message)
+
 @app.route('/api/v1/stats', methods=['POST'])
 def submit_stats():
     j = request.get_json()
@@ -55,70 +64,41 @@ def submit_stats():
                        c_id=j['device_carrier_id'])
     return "", 200
 
-@app.route('/api/v1/popular/<string:field>/<int:days>')
 @app.route('/api/v1/popular/<int:days>')
-@cache.cached(timeout=3600)
-def get_devices(field='model', days=90):
-    if app.config['COLLECT_ONLY']:
-        return ""
+def get_devices(field='model'):
     if field == 'device_id':
         return jsonify({'result': 'No!'})
-    return jsonify({
-        'result': get_most_popular(field, days)
-        })
+    cached = redis_cache.get("cache/popular/{}".format(field))
+    if not cached:
+        return jsonify({})
+    else:
+        return jsonify({'result': ast.literal_eval(cached)})
 
 @app.route('/')
-@cache.cached(timeout=3600)
 def index():
-    if app.config['COLLECT_ONLY']:
-        return "Stats are currently being collected, but we're unable to display them due to load"
-    stats = { "model": get_most_popular('model', 90), "country": get_most_popular("country", 90), "total": get_count(90)}
-    print stats
-    return render_template('index.html', stats=stats, columns=["model", "country"], date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
+    return redis_cache.get("cache/main") or "This page isn't rendered yet"
 
 @app.route('/api/v1/<string:field>/<string:value>')
-@cache.cached(timeout=3600)
 def api_stats_by_field(field, value):
     '''Get stats by a specific field. Examples:
        /model/hammerhead
        /country/in
        /carrier/T-Mobile
-       Each thing returns json blob'''
-    if app.config['COLLECT_ONLY']:
-        return ""
-    return jsonify(get_info_by_field(field, value))
+s       Each thing returns json blob'''
+    cached = redis_cache.get("cache/{}/{}".format(field, value))
+    if not cached:
+        return jsonify({})
+    else:
+        return jsonify(ast.literal_eval(cached))
 
 @app.route('/<string:field>/<string:value>/')
-@cache.cached(timeout=3600)
 def stats_by_field(field, value):
-    if app.config['COLLECT_ONLY']:
-        return ""
+    key = "cache/{}/{}".format(field, value)
+    cached = redis_cache.get(key)
+    if not cached:
+        return "This page isn't rendered yet"
     valuemap = { 'model': ['version', 'country'], 'carrier': ['model', 'country'], 'version': ['model', 'country'], 'country': ['model', 'carrier'] }
-
-    if not field in ['model', 'carrier', 'version', 'country'] or not has_thing(field, value): 
-        abort(404)
-
-    stats = get_info_by_field(field, value)
-    return render_template("index.html", stats=stats, columns=valuemap[field], value=value)
-
-#More caches!
-
-@cache.memoize(forced_update=force_cache_update)
-def get_most_popular(thing, count):
-    return Aggregate.get_most_popular(thing, count)
-
-@cache.memoize(forced_update=force_cache_update)
-def get_count(count):
-    return Aggregate.get_count(count)
-
-@cache.memoize(forced_update=force_cache_update)
-def get_info_by_field(field, value):
-    return Aggregate.get_info_by_field(field, value)
-
-@cache.memoize(forced_update=force_cache_update)
-def has_thing(field, value):
-    return Aggregate.has_thing(field, value)
-
+    return render_template("index.html", stats=ast.literal_eval(cached), columns=valuemap[field], value=value)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=True)

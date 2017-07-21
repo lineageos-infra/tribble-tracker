@@ -103,3 +103,8 @@ class Aggregate(Document):
         out['total']   = cls.objects().aggregate({ '$match': { cls.field_map[field]: value, 't': { '$gte': datetime.now()-timedelta(days=days) } } }, { '$group': { '_id': '$d' } }, { "$group": { "_id": 1, 'count': { '$sum': 1 } } }, allowDiskUse=True).next()['count']
         out['official'] = cls.get_official_count_by_field(field, value, days)
         return out
+
+    @classmethod
+    def get_field(cls, field, days=90):
+        # db.statistic.aggregate({ '$group': {'_id': '$d', 'model': { '$first': '$m'} } }, { '$group': { '_id': '$model'}}
+        return [x['_id'] for x in cls.objects().aggregate({ '$match': { 't': { '$gte': datetime.now()-timedelta(days=days) }} }, { '$group': {'_id': '${}'.format(cls.field_map[field])}})]
