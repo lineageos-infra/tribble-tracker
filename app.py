@@ -74,7 +74,7 @@ def index():
         return "Stats are currently being collected, but we're unable to display them due to load"
     stats = { "model": get_most_popular('model', 90), "country": get_most_popular("country", 90), "total": get_count(90)}
     print stats
-    return render_template('index.html', stats=stats, columns=["model", "country"])
+    return render_template('index.html', stats=stats, columns=["model", "country"], date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
 
 @app.route('/api/v1/<string:field>/<string:value>')
 @cache.cached(timeout=3600)
