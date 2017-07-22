@@ -48,7 +48,10 @@ def generate_caches():
     for field in ['model', 'carrier', 'version', 'country']:
         print("Generating cache/popular/{}".format(field))
         redis_cache.set("cache/popular/{}".format(field), Aggregate.get_most_popular(field, 90))
-        for value in Aggregate.get_field(field, 90):
+        for item in ast.literal_eval(redis_cache.get("cache/popular/{}".format(field))):
+            if item["total"] < 1000:
+                continue
+            value = item["_id"]
             print("Generating cache/{}/{}".format(field, value))
             try:
                 redis_cache.set("cache/{}/{}".format(field, value), Aggregate.get_info_by_field(field, value))
