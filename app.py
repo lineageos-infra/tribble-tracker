@@ -14,7 +14,7 @@ import random
 import string
 
 app = Flask(__name__)
-app.config.from_pyfile('app.cfg')
+app.config.from_object("config.Config")
 db = MongoEngine(app)
 redis_cache = FlaskRedis(app)
 
