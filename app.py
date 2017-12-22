@@ -6,6 +6,7 @@ from flask import Flask, jsonify, render_template, request, abort
 from flask_mongoengine import MongoEngine
 from flask_redis import FlaskRedis
 from prometheus_client import multiprocess, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Counter, Histogram
+from time import time
 
 import ast
 import click
