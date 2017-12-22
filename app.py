@@ -15,7 +15,13 @@ import hashlib
 import random
 import string
 
+
 app = Flask(__name__)
+app.testing = False
+if app.testing:
+    app.config.from_object("config.Config")
+else:
+    app.config.from_object("config.Test")
 app.config.from_object("config.Config")
 db = MongoEngine(app)
 redis_cache = FlaskRedis(app)
