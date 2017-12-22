@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from flask import Flask, jsonify, render_template, request, abort
 from flask_mongoengine import MongoEngine
 from flask_redis import FlaskRedis
+from prometheus_client import multiprocess, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Counter, Histogram
 
 import ast
 import click
@@ -17,6 +18,10 @@ app = Flask(__name__)
 app.config.from_object("config.Config")
 db = MongoEngine(app)
 redis_cache = FlaskRedis(app)
+
+##########################
+# Flask Commands
+##########################
 
 @app.cli.command()
 @click.argument("start")
@@ -59,6 +64,34 @@ def generate_caches():
             except Exception as e:
                 print(e.message)
 
+##########################
+# Metrics!
+##########################
+
+REQUEST_LATENCY = Histogram("flask_request_latency_seconds", "Request Latency", ['method', 'endpoint'])
+REQUEST_COUNT = Counter("flask_request_count", "Request Count", ["method", "endpoint", "status"])
+
+@app.before_request
+def start_timer():
+    request.stats_start = time()
+
+@app.after_request
+def stop_timer(response):
+    delta = time() - request.stats_start
+    REQUEST_LATENCY.labels(request.method, request.endpoint).observe(delta) #pylint: disable=no-member
+    REQUEST_COUNT.labels(request.method, request.endpoint, response.status_code).inc() #pylint: disable=no-member
+    return response
+
+@app.route('/metrics')
+def metrics():
+    registry = CollectorRegistry()
+    multiprocess.MultiProcessCollector(registry)
+return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
+
+##########################
+# API
+##########################
+
 @app.route('/api/v1/stats', methods=['POST'])
 def submit_stats():
     j = request.get_json()
@@ -78,9 +111,6 @@ def get_devices(field='model'):
     else:
         return jsonify({'result': ast.literal_eval(cached)})
 
-@app.route('/')
-def index():
-    return redis_cache.get("cache/main") or "This page isn't rendered yet"
 
 @app.route('/api/v1/<string:field>/<string:value>')
 def api_stats_by_field(field, value):
@@ -88,12 +118,20 @@ def api_stats_by_field(field, value):
        /model/hammerhead
        /country/in
        /carrier/T-Mobile
-s       Each thing returns json blob'''
+       Each thing returns json blob'''
     cached = redis_cache.get("cache/{}/{}".format(field, value))
     if not cached:
         return jsonify({})
     else:
         return jsonify(ast.literal_eval(cached))
+
+##########################
+# Web Views
+##########################
+
+@app.route('/')
+def index():
+    return redis_cache.get("cache/main") or "This page isn't rendered yet"
 
 @app.route('/<string:field>/<string:value>/')
 def stats_by_field(field, value):

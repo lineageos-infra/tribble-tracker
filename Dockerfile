@@ -12,6 +12,9 @@ ENV REDIS_URL "redis://redis:6379/4"
 
 ENV FLASK_APP app.py
 
+CMD mkdir /metrics
+ENV prometheus_multiproc_dir /metrics
+
 RUN pip install -r /app/requirements.txt
 RUN pip install gunicorn
 
