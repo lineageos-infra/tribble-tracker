@@ -86,7 +86,7 @@ def stop_timer(response):
 def metrics():
     registry = CollectorRegistry()
     multiprocess.MultiProcessCollector(registry)
-return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
+    return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
 
 ##########################
 # API
