@@ -1,0 +1,1 @@
+This folder is used for cross-worker metric collection inside of the docker container. Do not put anything else here.
