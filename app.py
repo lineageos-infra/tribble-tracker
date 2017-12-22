@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from database import Aggregate, Statistic
 
 from datetime import datetime, timedelta
-from flask import Flask, jsonify, render_template, request, abort
+from flask import Flask, jsonify, render_template, request, abort, Response
 from flask_mongoengine import MongoEngine
 from flask_redis import FlaskRedis
 from prometheus_client import multiprocess, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Counter, Histogram
