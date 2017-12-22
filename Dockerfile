@@ -10,6 +10,8 @@ ENV MONGODB_HOST "mongo"
 
 ENV REDIS_URL "redis://redis:6379/4"
 
+ENV FLASK_APP app.py
+
 RUN pip install -r /app/requirements.txt
 RUN pip install gunicorn
 
