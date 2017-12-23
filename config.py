@@ -6,11 +6,3 @@ class Config(object):
     MONGODB_PASSWORD = os.environ.get("MONGODB_PASSWORD", "")
     MONGODB_HOST = os.environ.get("MONGODB_HOST", "127.0.0.1")
     MONGODB_PORT = int(os.environ.get("MONGODB_PORT", "27017"))
-
-    REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost")
-
-class Test(object):
-    MONGO_DB = "stats"
-    MONGODB_IS_MOCK = True
-    #MONGO_HOST = "mongomock://localhost/"
-    REDIS_URL = "redis://localhost"
