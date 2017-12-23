@@ -1,13 +1,36 @@
 import os
 from datetime import datetime
+from time import time
 
 import falcon
-from falcon.media.validators import jsonschema
 import jinja2
 import mongoengine
+from falcon.media.validators import jsonschema
+from prometheus_client import multiprocess, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Counter, Histogram
 
 from config import Config as config
 from models import Statistic, Aggregate
+
+
+
+REQUEST_LATENCY = Histogram("falcon_request_latency_seconds", "Request Latency", ['method', 'endpoint'])
+REQUEST_COUNT = Counter("falcon_request_count", "Request Count", ["method", "endpoint", "status"])
+
+class PrometheusComponent(object):
+    def process_request(self, req, resp):
+        req.context['start_time'] = time()
+
+    def process_response(self, req, resp, resource, req_suceeded):
+        delta = time() - req.context['start_time']
+        REQUEST_LATENCY.labels(req.method, req.relative_uri).observe(delta)
+        REQUEST_COUNT.labels(req.method, req.relative_uri, resp.status).inc()
+
+class PrometheusMetricsResource(object):
+    def on_get(self, req, resp):
+        registry = CollectorRegistry()
+        multiprocess.MultiProcessCollector(registry)
+        resp.body = generate_latest(registry)
+        resp.content_type = CONTENT_TYPE_LATEST
 
 def load_template(name):
     path = os.path.join('templates', name)
@@ -82,11 +105,12 @@ class FieldResource(object):
         resp.content_type = "text/html"
         resp.body = template
 
-app = falcon.API()
+app = falcon.API(middleware=[PrometheusComponent()])
 app.add_route('/', IndexResource())
 app.add_route('/{field}/{value}', FieldResource())
 app.add_route('/static/{kind}/{filename}', StaticResource())
 app.add_route('/api/v1/stats', StatsApiResource())
+app.add_route('/metrics', PrometheusMetricsResource())
 
 mongoengine.connect(
     config.MONGODB_DB,
