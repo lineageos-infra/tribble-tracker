@@ -94,6 +94,10 @@ class IndexResource(object):
 
 class FieldResource(object):
     def on_get(self, req, resp, field, value):
+        resp.status = falcon.HTTP_503
+        resp.body = "Individual stats are not currently available"
+        resp.content_type = "text/html"
+        return
         if not field in Aggregate.field_map.keys():
             resp.status = falcon.HTTP_404
             resp.content_type = "text/plain"
