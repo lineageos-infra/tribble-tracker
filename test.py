@@ -33,6 +33,19 @@ def test_post(client):
     Statistic.objects().delete()
     Aggregate.objects().delete()
 
+def test_get(client):
+    create_statistics()
+    expected = {
+        'model': Aggregate.get_most_popular('model', 90),
+        'country': Aggregate.get_most_popular('country', 90),
+        'total': Aggregate.get_count(90)
+    }
+    result = client.simulate_get('/api/v1/stats')
+    assert result.status_code == 200
+    assert result.json == expected
+    Statistic.objects().delete()
+    Aggregate.objects().delete()
+
 def test_popular_stats(client):
     create_statistics()
     popular = Aggregate.get_most_popular('model', 90)

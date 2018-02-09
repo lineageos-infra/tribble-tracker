@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime
 from time import time
@@ -76,6 +77,14 @@ class StatsApiResource(object):
         resp.body = "neat"
         resp.content_type = "text/plain"
 
+    def on_get(self, req, resp):
+        '''Handles get requests to /api/v1/stats'''
+        stats = {
+            'model': Aggregate.get_most_popular('model', 90),
+            'country': Aggregate.get_most_popular("country", 90),
+            'total': Aggregate.get_count(90)
+        }
+        resp.body = json.dumps(stats)
 
 class StaticResource(object):
     def on_get(self, req, resp, kind, filename):
