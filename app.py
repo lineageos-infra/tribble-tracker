@@ -73,16 +73,7 @@ class StatsApiResource(object):
     def on_post(self, req, resp):
         '''Handles post requests to /api/v1/stats'''
         data = req.media
-        session = sql.Session()
-        session.add(sql.Statistic(
-            device_id=data['device_hash'],
-            model=data['device_name'],
-            version=data['device_version'],
-            country=data['device_country'],
-            carrier=data['device_carrier'],
-            carrier_id=data['device_carrier_id'],
-        ))
-        session.commit()
+        sql.Statistic.create(data)
         resp.body = "neat"
         resp.content_type = "text/plain"
 

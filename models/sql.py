@@ -27,13 +27,29 @@ class Statistic(Base):
     submit_time = Column(DateTime, server_default=func.now())
 
     @classmethod
+    def create(cls, data):
+        session = Session()
+        session.add(cls(
+            device_id=data['device_hash'],
+            model=data['device_name'],
+            version=data['device_version'],
+            country=data['device_country'],
+            carrier=data['device_carrier'],
+            carrier_id=data['device_carrier_id'],
+        ))
+        session.commit()
+        session.close()
+
+    @classmethod
     def get_most_popular(cls, field, days):
         session = Session()
         if hasattr(cls, field):
             return session.query(getattr(cls, field), func.count(distinct(cls.device_id)).label('count')).group_by(getattr(cls, field)).order_by('count desc')
+        session.close()
     @classmethod
     def get_count(cls, days=90):
         session = Session()
         return session.query(func.count(distinct(cls.device_id)))
+        session.close()
 
 Base.metadata.create_all(engine)
