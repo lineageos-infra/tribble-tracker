@@ -5,13 +5,13 @@ from time import time
 
 import falcon
 import jinja2
-import mongoengine
+
+from sqlalchemy import distinct, func
 from falcon.media.validators import jsonschema
 from prometheus_client import multiprocess, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Counter, Histogram
 
 from config import Config as config
-from models import Statistic, Aggregate
-
+from models import sql
 
 j2env = jinja2.Environment(
     loader=jinja2.FileSystemLoader("templates"),
@@ -73,19 +73,25 @@ class StatsApiResource(object):
     def on_post(self, req, resp):
         '''Handles post requests to /api/v1/stats'''
         data = req.media
-        Aggregate.add_stat(d=data['device_hash'],
-                           m=data['device_name'], v=data['device_version'],
-                           u=data['device_country'], c=data['device_carrier'],
-                           c_id=data['device_carrier_id'])
+        session = sql.Session()
+        session.add(sql.Statistic(
+            device_id=data['device_hash'],
+            model=data['device_name'],
+            version=data['device_version'],
+            country=data['device_country'],
+            carrier=data['device_carrier'],
+            carrier_id=data['device_carrier_id'],
+        ))
+        session.commit()
         resp.body = "neat"
         resp.content_type = "text/plain"
 
     def on_get(self, req, resp):
         '''Handles get requests to /api/v1/stats'''
         stats = {
-            'model': Aggregate.get_most_popular('model', 90),
-            'country': Aggregate.get_most_popular("country", 90),
-            'total': Aggregate.get_count(90)
+            'model': {x[0]: x[1] for x in sql.Statistic.get_most_popular('model', 90)},
+            'country': {x[0]: x[1] for x in sql.Statistic.get_most_popular("country", 90)},
+            'total': sql.Statistic.get_count(90).first()[0]
         }
         resp.body = json.dumps(stats)
 
@@ -99,24 +105,29 @@ class StaticResource(object):
 class IndexResource(object):
     def on_get(self, req, resp):
         '''Render the main page'''
-        stats = {"model": Aggregate.get_most_popular('model', 90), "country": Aggregate.get_most_popular("country", 90), "total": Aggregate.get_count(90)}
+        stats = {
+            "model": sql.Statistic.get_most_popular('model', 90),
+            "country": sql.Statistic.get_most_popular("country", 90),
+            "total": sql.Statistic.get_count(90).first()[0],
+        }
         template = load_template('index.html').render(stats=stats, columns=["model", "country"], date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
         resp.content_type = 'text/html'
         resp.body = template
 
 class FieldResource(object):
     def on_get(self, req, resp, field, value):
-        resp.status = falcon.HTTP_503
-        resp.body = "Individual stats are not currently available"
-        resp.content_type = "text/html"
-        return
-        if not field in Aggregate.field_map.keys():
+        if not field in ['model', 'carrier', 'version', 'country']:
             resp.status = falcon.HTTP_404
             resp.content_type = "text/plain"
             resp.body = "Not Found"
             return
         valuemap = {'model': ['version', 'country'], 'carrier': ['model', 'country'], 'version': ['model', 'country'], 'country': ['model', 'carrier']}
-        stats = Aggregate.get_info_by_field(field, value, left=valuemap[field][0], right=valuemap[field][1])
+        left, right = valuemap[field]
+        stats = {
+            left: sql.Statistic.get_most_popular(left, 90).filter_by(**{field: value}),
+            right: sql.Statistic.get_most_popular(right, 90).filter_by(**{field: value}),
+            "total": sql.Statistic.get_count(90).filter_by(**{field: value}).first()[0]
+        }
         template = load_template('index.html').render(stats=stats, columns=valuemap[field], value=value, date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
         resp.content_type = "text/html"
         resp.body = template
@@ -128,10 +139,3 @@ app.add_route('/static/{kind}/{filename}', StaticResource())
 app.add_route('/api/v1/stats', StatsApiResource())
 app.add_route('/metrics', PrometheusMetricsResource())
 
-mongoengine.connect(
-    config.MONGODB_DB,
-    host=config.MONGODB_HOST,
-    port=config.MONGODB_PORT,
-    username=config.MONGODB_USERNAME,
-    password=config.MONGODB_PASSWORD
-)

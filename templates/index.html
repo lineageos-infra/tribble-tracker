@@ -25,8 +25,8 @@
 				<div class="leaderboard-header">Most active {{columns[0]}}</div>
 				{% for thing in stats[columns[0]] %}
 				<div class="leaderboard-row leaderboard-row-{{ 'a' if loop.index % 2 == 0 else 'b' }}">
-					<span class="leaderboard-left">{{ loop.index }}. <a href="/{{columns[0]}}/{{thing['_id']}}">{{ thing['_id'] }}</a></span>
-					<span class="leaderboard-right">{{ thing['total'] }}</span>
+					<span class="leaderboard-left">{{ loop.index }}. <a href="/{{columns[0]}}/{{thing[0]}}">{{ thing[0] }}</a></span>
+					<span class="leaderboard-right">{{ thing[1] }}</span>
 				</div>
 				{% endfor %}
 			</div>
@@ -49,8 +49,8 @@
 				<div class="leaderboard-header">Most active {{columns[1]}}</div>
 				{% for thing in stats[columns[1]] %}
 				<div class="leaderboard-row leaderboard-row-{{ 'a' if loop.index % 2 == 0 else 'b' }}">
-					<span class="leaderboard-left">{{ loop.index }}. <a href="/{{columns[1]}}/{{thing['_id']}}">{{ thing['_id'] }}</a></span>
-					<span class="leaderboard-right">{{ thing['total'] }}</span>
+					<span class="leaderboard-left">{{ loop.index }}. <a href="/{{columns[1]}}/{{thing[0]}}">{{ thing[0] }}</a></span>
+					<span class="leaderboard-right">{{ thing[1] }}</span>
 				</div>
 				{% endfor %}
 			</div>
