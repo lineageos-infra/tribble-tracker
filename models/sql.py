@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import Column, Integer, String, DateTime, create_engine, distinct, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
@@ -6,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import Integer
 from sqlalchemy.dialects import postgresql
 
-engine = create_engine('sqlite:///db.sqlite', echo=True)
+engine = create_engine(os.environ.get("SQL_CONNECT_STRING", "sqlite:///local.db"))
 Session = sessionmaker(bind=engine)
 
 Base = declarative_base()
@@ -34,3 +35,5 @@ class Statistic(Base):
     def get_count(cls, days=90):
         session = Session()
         return session.query(func.count(distinct(cls.device_id)))
+
+Base.metadata.create_all(engine)
