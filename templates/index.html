@@ -25,7 +25,7 @@
 				<div class="leaderboard-header">Most active {{columns[0]}}</div>
 				{% for thing in stats[columns[0]] %}
 				<div class="leaderboard-row leaderboard-row-{{ 'a' if loop.index % 2 == 0 else 'b' }}">
-					<span class="leaderboard-left">{{ loop.index }}. <a href="https://wiki.lineageos.org/devices/{{thing['_id']}}">{{ thing['_id'] }}</a></span>
+					<span class="leaderboard-left">{{ loop.index }}. <a href="/{{columns[0]}}/{{thing['_id']}}">{{ thing['_id'] }}</a></span>
 					<span class="leaderboard-right">{{ thing['total'] }}</span>
 				</div>
 				{% endfor %}
