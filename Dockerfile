@@ -1,4 +1,4 @@
-FROM python:3.6-alpine
+FROM python:3.6
 
 COPY . /app
 WORKDIR /app
@@ -7,8 +7,6 @@ ENV MONGODB_DB "stats"
 ENV MONGODB_USERNAME ""
 ENV MONGODB_PASSWORD ""
 ENV MONGODB_HOST "mongo"
-
-ENV FLASK_APP app.py
 
 ENV prometheus_multiproc_dir /app/metrics
 
