@@ -11,3 +11,6 @@ local/
 share/
 pip-selfcheck.json
 venv/
+*.db
+*.sqlite
+.python-version
