@@ -13,6 +13,11 @@ from config import Config as config
 from models import Statistic, Aggregate
 
 
+j2env = jinja2.Environment(
+    loader=jinja2.FileSystemLoader("templates"),
+    autoescape=jinja2.select_autoescape(['html', 'xml'])
+)
+
 
 REQUEST_LATENCY = Histogram("falcon_request_latency_seconds", "Request Latency", ['method', 'endpoint'])
 REQUEST_COUNT = Counter("falcon_request_count", "Request Count", ["method", "endpoint", "status"])
@@ -34,9 +39,7 @@ class PrometheusMetricsResource(object):
         resp.content_type = CONTENT_TYPE_LATEST
 
 def load_template(name):
-    path = os.path.join('templates', name)
-    with open(os.path.abspath(path), 'r') as f:
-        return jinja2.Template(f.read())
+    return j2env.get_template(name)
 
 
 class StatsApiResource(object):
