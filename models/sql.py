@@ -7,7 +7,13 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import Integer
 from sqlalchemy.dialects import postgresql
 
-engine = create_engine(os.environ.get("SQL_CONNECT_STRING", "sqlite:///local.db"), pool_size=25, max_overflow=25)
+SQL_CONNECT_STRING = os.environ.get("SQL_CONNECT_STRING", "sqlite:///local.db")
+
+if SQL_CONNECT_STRING.startswith("sqlite://"):
+    engine = create_engine(SQL_CONNECT_STRING)
+else:
+    engine = create_engine(SQL_CONNECT_STRING, pool_size=25, max_overflow=25)
+
 Session = sessionmaker(bind=engine)
 
 Base = declarative_base()
