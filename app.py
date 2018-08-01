@@ -28,8 +28,9 @@ class PrometheusComponent(object):
 
     def process_response(self, req, resp, resource, req_suceeded):
         delta = time() - req.context['start_time']
-        REQUEST_LATENCY.labels(req.method, req.relative_uri).observe(delta)
-        REQUEST_COUNT.labels(req.method, req.relative_uri, resp.status).inc()
+        if req.relative_uri in ['/api/v1/stats', '/']:
+            REQUEST_LATENCY.labels(req.method, req.relative_uri).observe(delta)
+            REQUEST_COUNT.labels(req.method, req.relative_uri, resp.status).inc()
 
 class PrometheusMetricsResource(object):
     def on_get(self, req, resp):
