@@ -1,7 +1,7 @@
 import os
 from sqlalchemy import Column, Integer, String, DateTime, create_engine, distinct, func
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func, text
+from sqlalchemy.sql import func
 from sqlalchemy.orm import sessionmaker
 
 from sqlalchemy.types import Integer
@@ -10,7 +10,7 @@ from sqlalchemy.dialects import postgresql
 SQL_CONNECT_STRING = os.environ.get("SQL_CONNECT_STRING", "sqlite:///local.db")
 
 if SQL_CONNECT_STRING.startswith("sqlite://"):
-    engine = create_engine(SQL_CONNECT_STRING, echo=True)
+    engine = create_engine(SQL_CONNECT_STRING)
 else:
     engine = create_engine(SQL_CONNECT_STRING, pool_size=25, max_overflow=25)
 
@@ -84,26 +84,10 @@ class Aggregate(Base):
         session.close()
 
     @classmethod
-    def get_count(cls):
+    def get_count(cls, days=90):
         session = Session()
-        data = {
-            "total": session.query(func.count(cls.device_id)).first()[0],
-        }
-        if session.bind.dialect.name == "postgresql":
-            data["official"] = session.query(func.count(cls.device_id)).filter(text("version ~ '\d\d\.\d-\d{8}-NIGHTLY-[a-zA-Z]*'")).first()[0]
+        return session.query(func.count(cls.device_id))
         session.close()
-        return data
-
-    @classmethod
-    def get_count_by_field(cls, field, value):
-        session = Session()
-        data = {
-            "total": session.query(func.count(cls.device_id)).filter_by(**{field: value}).first()[0]
-        }
-        if session.bind.dialect.name == "postgresql":
-            data["official"] = session.query(func.count(cls.device_id)).filter_by(**{field: value}).filter(text("version ~ '\d\d\.\d-\d{8}-NIGHTLY-[a-zA-Z]*'")).first()[0]
-        session.close()
-        return data
 
 Base.metadata.create_all(engine)
 

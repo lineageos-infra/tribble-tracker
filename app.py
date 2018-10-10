@@ -1,12 +1,12 @@
 import json
 import os
+from datetime import datetime
 from time import time
 
 import falcon
 import jinja2
 
 from sqlalchemy import distinct, func
-from sqlalchemy.sql import text
 from falcon.media.validators import jsonschema
 from prometheus_client import multiprocess, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Counter, Histogram
 
@@ -83,7 +83,7 @@ class StatsApiResource(object):
         stats = {
             'model': {x[0]: x[1] for x in sql.Aggregate.get_most_popular('model', 90)},
             'country': {x[0]: x[1] for x in sql.Aggregate.get_most_popular("country", 90)},
-            **sql.Aggregate.get_count(),
+            'total': sql.Aggregate.get_count(90).first()[0]
         }
         resp.body = json.dumps(stats)
 
@@ -100,9 +100,9 @@ class IndexResource(object):
         stats = {
             "model": sql.Aggregate.get_most_popular('model', 90),
             "country": sql.Aggregate.get_most_popular("country", 90),
-            **sql.Aggregate.get_count(),
+            "total": sql.Aggregate.get_count(90).first()[0],
         }
-        template = load_template('index.html').render(stats=stats, columns=["model", "country"])
+        template = load_template('index.html').render(stats=stats, columns=["model", "country"], date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
         resp.content_type = 'text/html'
         resp.body = template
 
@@ -118,9 +118,9 @@ class FieldResource(object):
         stats = {
             left: sql.Aggregate.get_most_popular(left, 90).filter_by(**{field: value}),
             right: sql.Aggregate.get_most_popular(right, 90).filter_by(**{field: value}),
-            **sql.Aggregate.get_count_by_field(field, value),
+            "total": sql.Aggregate.get_count(90).filter_by(**{field: value}).first()[0]
         }
-        template = load_template('index.html').render(stats=stats, columns=valuemap[field], value=value)
+        template = load_template('index.html').render(stats=stats, columns=valuemap[field], value=value, date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
         resp.content_type = "text/html"
         resp.body = template
 

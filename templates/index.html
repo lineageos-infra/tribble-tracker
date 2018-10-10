@@ -37,9 +37,8 @@
 					<div class="aside">
 						<span class="aside-header">{% if field and value %}{{field}}: {{value}}<br />{% endif %}Total active installs:</span>
 						<div class="aside-value">{{ stats['total'] }} </div>
-                        {% if 'official' in stats %}
-                        <div class="aside-date">Official Builds: {{ stats['official'] }}</div>
-                        <div class="aside-date">Unofficial Builds: {{ stats['total'] - stats['official'] }}</div>
+                        {% if date %}
+                        <div class="aside-date">Updated on {{date}}</div>
                         {% endif %}
 					</div>
 				</div>
