@@ -1,6 +1,5 @@
 import json
 import os
-from datetime import datetime
 from time import time
 
 import falcon
@@ -101,8 +100,9 @@ class IndexResource(object):
             "model": sql.Aggregate.get_most_popular('model', 90),
             "country": sql.Aggregate.get_most_popular("country", 90),
             "total": sql.Aggregate.get_count(90).first()[0],
+            "official": sql.Aggregate.get_count(90).filter(text("version ~ '\d\d\.\d-\d{8}-NIGHTLY-[a-zA-Z]*'")).first()[0],
         }
-        template = load_template('index.html').render(stats=stats, columns=["model", "country"], date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
+        template = load_template('index.html').render(stats=stats, columns=["model", "country"])
         resp.content_type = 'text/html'
         resp.body = template
 
@@ -118,9 +118,10 @@ class FieldResource(object):
         stats = {
             left: sql.Aggregate.get_most_popular(left, 90).filter_by(**{field: value}),
             right: sql.Aggregate.get_most_popular(right, 90).filter_by(**{field: value}),
-            "total": sql.Aggregate.get_count(90).filter_by(**{field: value}).first()[0]
+            "total": sql.Aggregate.get_count(90).filter_by(**{field: value}).first()[0],
+            "official": sql.Aggregate.get_count(90).filter_by(**{field: value}).filter(text("version ~ '\d\d\.\d-\d{8}-NIGHTLY-[a-zA-Z]*'")).first()[0],
         }
-        template = load_template('index.html').render(stats=stats, columns=valuemap[field], value=value, date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
+        template = load_template('index.html').render(stats=stats, columns=valuemap[field], value=value)
         resp.content_type = "text/html"
         resp.body = template
 
