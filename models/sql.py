@@ -1,7 +1,7 @@
 import os
 from sqlalchemy import Column, Integer, String, DateTime, create_engine, distinct, func
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, text
 from sqlalchemy.orm import sessionmaker
 
 from sqlalchemy.types import Integer
