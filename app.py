@@ -118,7 +118,7 @@ class FieldResource(object):
         stats = {
             left: sql.Aggregate.get_most_popular(left, 90).filter_by(**{field: value}),
             right: sql.Aggregate.get_most_popular(right, 90).filter_by(**{field: value}),
-            **sql.Aggregate.get_count_by_field(field, value).first()[0],
+            **sql.Aggregate.get_count_by_field(field, value),
         }
         template = load_template('index.html').render(stats=stats, columns=valuemap[field], value=value)
         resp.content_type = "text/html"

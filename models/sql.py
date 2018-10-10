@@ -90,7 +90,7 @@ class Aggregate(Base):
             "total": session.query(func.count(cls.device_id)).first()[0],
         }
         if session.bind.dialect.name == "postgresql":
-            data["official"] = session.query(func.count(cls.device_id)).filter(text("version ~ '\d\d\.\d-\d{8}-NIGHTLY-[a-zA-Z]*'")).first()[0],
+            data["official"] = session.query(func.count(cls.device_id)).filter(text("version ~ '\d\d\.\d-\d{8}-NIGHTLY-[a-zA-Z]*'")).first()[0]
         session.close()
         return data
 
@@ -101,7 +101,7 @@ class Aggregate(Base):
             "total": session.query(func.count(cls.device_id)).filter_by(**{field: value}).first()[0]
         }
         if session.bind.dialect.name == "postgresql":
-            data["official"] = session.query(func.count(cls.device_id)).filter_by(**{field: value}).filter(text("version ~ '\d\d\.\d-\d{8}-NIGHTLY-[a-zA-Z]*'")).first()[0],
+            data["official"] = session.query(func.count(cls.device_id)).filter_by(**{field: value}).filter(text("version ~ '\d\d\.\d-\d{8}-NIGHTLY-[a-zA-Z]*'")).first()[0]
         session.close()
         return data
 
