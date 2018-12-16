@@ -18,6 +18,15 @@ j2env = jinja2.Environment(
     autoescape=jinja2.select_autoescape(['html', 'xml'])
 )
 
+# These things are either misconfigured to not send a static device_id
+# or they're maliciously inflating their values. As such, we reject stats
+# coming from them.
+BLACKLIST = {
+    'device_version': {
+        '13.0-20180304-UNOFFICIAL-ht16': True
+    }
+}
+
 
 REQUEST_LATENCY = Histogram("falcon_request_latency_seconds", "Request Latency", ['method', 'endpoint'])
 REQUEST_COUNT = Counter("falcon_request_count", "Request Count", ["method", "endpoint", "status"])
@@ -74,7 +83,8 @@ class StatsApiResource(object):
     def on_post(self, req, resp):
         '''Handles post requests to /api/v1/stats'''
         data = req.media
-        sql.Statistic.create(data)
+        if not BLACKLIST['device_version'].get(data['device_version'], False):
+            sql.Statistic.create(data)
         resp.body = "neat"
         resp.content_type = "text/plain"
 
