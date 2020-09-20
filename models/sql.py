@@ -18,17 +18,13 @@ Session = sessionmaker(bind=engine)
 
 Base = declarative_base()
 
-PrimaryKey = Integer()
-PrimaryKey = PrimaryKey.with_variant(postgresql.BIGINT, "postgresql")
-
 class Statistic(Base):
     '''Main data table
 
     TODO(zifnab): indexes + migrations
     '''
     __tablename__ = "stats"
-    statistic_id = Column(PrimaryKey, primary_key=True, autoincrement=True)
-    device_id = Column(String)
+    device_id = Column(String, primary_key=True)
     model = Column(String)
     version = Column(String)
     country = Column(String)
@@ -39,7 +35,7 @@ class Statistic(Base):
     @classmethod
     def create(cls, data):
         session = Session()
-        session.add(cls(
+        session.merge(cls(
             device_id=data['device_hash'],
             model=data['device_name'],
             version=data['device_version'],
@@ -49,32 +45,6 @@ class Statistic(Base):
         ))
         session.commit()
         session.close()
-
-
-class Aggregate(Base):
-    '''THIS NEEDS TO BE A MATERIALIZED VIEW
-       After intiial creation, you need to run the following in postgres:
-
-       drop table aggregate;
-       create materialized view aggregate as (select distinct on (device_id) * from (select * from stats where submit_time > localtimestamp - interval '3' month order by statistic_id desc limit 35000000) as foo);
-
-    You'll then want to restart the service. Materalized views are cached, on some regular basis you'll need to run:
-
-    refresh materialized view aggregate;
-
-    This process may take a long time. Try ajusting the limit above to a sane value (35mil was picked by running something like select * from stats where submit_time > localtimestamp - interval '3' month and statistic_id = (max id) - 35000000 order by statistic_id desc limit 1)
-
-    TODO(zifnab): automate this
-    '''
-    __tablename__ = "aggregate"
-    statistic_id = Column(PrimaryKey, primary_key=True, autoincrement=True)
-    device_id = Column(String)
-    model = Column(String)
-    version = Column(String)
-    country = Column(String)
-    carrier = Column(String)
-    carrier_id = Column(String)
-    submit_time = Column(DateTime, server_default=func.now())
 
     @classmethod
     def get_most_popular(cls, field, days):
