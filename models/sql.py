@@ -1,11 +1,12 @@
 import os
 from sqlalchemy import Column, Integer, String, DateTime, create_engine, distinct, func
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, text
 from sqlalchemy.orm import sessionmaker
 
 from sqlalchemy.types import Integer
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.sql.expression import desc
 
 SQL_CONNECT_STRING = os.environ.get("SQL_CONNECT_STRING", "sqlite:///local.db")
 
@@ -50,7 +51,7 @@ class Statistic(Base):
     def get_most_popular(cls, field, days):
         session = Session()
         if hasattr(cls, field):
-            return session.query(getattr(cls, field), func.count(cls.device_id).label('count')).group_by(getattr(cls, field)).order_by('count desc')
+            return session.query(getattr(cls, field), func.count(cls.device_id).label('count')).group_by(getattr(cls, field)).order_by(desc('count'))
         session.close()
 
     @classmethod
