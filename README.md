@@ -27,5 +27,4 @@ Limitations
 * Devices lose their ANDROID_ID when they're either wiped. As such, device counts may be high if a large number of wipes have occured during the period (ie, during new release times).
 * Devices without sim cards do not report their country, carrier, or carrier ID.
 
-All stats displayed are an aggregate of the last 90 days. The magnitude of any given device is assumed to be accurate (ie, 1% of all devices are a specific model).
-
+All stats are displayed, you'll want to drop old data if that's a thing you care about. We keep 90 days. Only the last checkin for each device is kept.
