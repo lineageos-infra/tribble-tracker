@@ -91,9 +91,9 @@ class StatsApiResource(object):
     def on_get(self, req, resp):
         '''Handles get requests to /api/v1/stats'''
         stats = {
-            'model': {x[0]: x[1] for x in sql.Aggregate.get_most_popular('model', 90)},
-            'country': {x[0]: x[1] for x in sql.Aggregate.get_most_popular("country", 90)},
-            'total': sql.Aggregate.get_count(90).first()[0]
+            'model': {x[0]: x[1] for x in sql.Statistic.get_most_popular('model', 90)},
+            'country': {x[0]: x[1] for x in sql.Statistic.get_most_popular("country", 90)},
+            'total': sql.Statistic.get_count(90).first()[0]
         }
         resp.body = json.dumps(stats)
 
@@ -108,9 +108,9 @@ class IndexResource(object):
     def on_get(self, req, resp):
         '''Render the main page'''
         stats = {
-            "model": sql.Aggregate.get_most_popular('model', 90),
-            "country": sql.Aggregate.get_most_popular("country", 90),
-            "total": sql.Aggregate.get_count(90).first()[0],
+            "model": sql.Statistic.get_most_popular('model', 90),
+            "country": sql.Statistic.get_most_popular("country", 90),
+            "total": sql.Statistic.get_count(90).first()[0],
         }
         template = load_template('index.html').render(stats=stats, columns=["model", "country"], date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
         resp.content_type = 'text/html'
@@ -126,9 +126,9 @@ class FieldResource(object):
         valuemap = {'model': ['version', 'country'], 'carrier': ['model', 'country'], 'version': ['model', 'country'], 'country': ['model', 'carrier']}
         left, right = valuemap[field]
         stats = {
-            left: sql.Aggregate.get_most_popular(left, 90).filter_by(**{field: value}),
-            right: sql.Aggregate.get_most_popular(right, 90).filter_by(**{field: value}),
-            "total": sql.Aggregate.get_count(90).filter_by(**{field: value}).first()[0]
+            left: sql.Statistic.get_most_popular(left, 90).filter_by(**{field: value}),
+            right: sql.Statistic.get_most_popular(right, 90).filter_by(**{field: value}),
+            "total": sql.Statistic.get_count(90).filter_by(**{field: value}).first()[0]
         }
         template = load_template('index.html').render(stats=stats, columns=valuemap[field], value=value, date=datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
         resp.content_type = "text/html"
