@@ -1,3 +1,4 @@
+import datetime
 import os
 from sqlalchemy import Column, Integer, String, DateTime, create_engine, distinct, func
 from sqlalchemy.ext.declarative import declarative_base
@@ -59,6 +60,13 @@ class Statistic(Base):
         session = Session()
         return session.query(func.count(cls.device_id))
         session.close()
+
+    @classmethod
+    def drop_old(cls, days=90):
+        session = Session()
+        limit = datetime.datetime.now() - datetime.timedelta(days=days)
+        session.query(cls).filter(cls.submit_time <= limit).delete()
+        session.commit()
 
 Base.metadata.create_all(engine)
 
