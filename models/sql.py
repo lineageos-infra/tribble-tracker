@@ -1,5 +1,8 @@
 import datetime
 import os
+
+from contextlib import contextmanager
+
 from sqlalchemy import Column, Integer, String, DateTime, create_engine, distinct, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func, text
@@ -20,6 +23,18 @@ Session = sessionmaker(bind=engine)
 
 Base = declarative_base()
 
+@contextmanager
+def session_scope():
+    session = Session()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
 class Statistic(Base):
     '''Main data table
 
@@ -36,37 +51,32 @@ class Statistic(Base):
 
     @classmethod
     def create(cls, data):
-        session = Session()
-        session.merge(cls(
-            device_id=data['device_hash'],
-            model=data['device_name'],
-            version=data['device_version'],
-            country=data['device_country'],
-            carrier=data['device_carrier'],
-            carrier_id=data['device_carrier_id'],
-        ))
-        session.commit()
-        session.close()
+        with session_scope() as session:
+            session.merge(cls(
+                device_id=data['device_hash'],
+                model=data['device_name'],
+                version=data['device_version'],
+                country=data['device_country'],
+                carrier=data['device_carrier'],
+                carrier_id=data['device_carrier_id'],
+            ))
 
     @classmethod
     def get_most_popular(cls, field, days):
-        session = Session()
-        if hasattr(cls, field):
-            return session.query(getattr(cls, field), func.count(cls.device_id).label('count')).group_by(getattr(cls, field)).order_by(desc('count'))
-        session.close()
+        with session_scope() as session:
+            if hasattr(cls, field):
+                return session.query(getattr(cls, field), func.count(cls.device_id).label('count')).group_by(getattr(cls, field)).order_by(desc('count'))
 
     @classmethod
     def get_count(cls, days=90):
-        session = Session()
-        return session.query(func.count(cls.device_id))
-        session.close()
+        with session_scope() as session:
+            return session.query(func.count(cls.device_id))
 
     @classmethod
     def drop_old(cls, days=90):
-        session = Session()
-        limit = datetime.datetime.now() - datetime.timedelta(days=days)
-        session.query(cls).filter(cls.submit_time <= limit).delete()
-        session.commit()
+        with session_scope() as session:
+            limit = datetime.datetime.now() - datetime.timedelta(days=days)
+            session.query(cls).filter(cls.submit_time <= limit).delete()
 
 Base.metadata.create_all(engine)
 
