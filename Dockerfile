@@ -9,4 +9,4 @@ RUN pip install -r /app/requirements.txt
 
 COPY . /app
 
-CMD gunicorn app:app -b 0.0.0.0:8080 -w 9
+CMD gunicorn app:app -b 0.0.0.0:8080 -w 9 --max-requests 1000 --max-requests-jitter 500
