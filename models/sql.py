@@ -3,13 +3,11 @@ import os
 
 from contextlib import contextmanager
 
-from sqlalchemy import Column, Integer, String, DateTime, create_engine, distinct, func
+from sqlalchemy import Column, String, DateTime, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func, text
+from sqlalchemy.sql import func
 from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy.types import Integer
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.expression import desc
 
 SQL_CONNECT_STRING = os.environ.get("SQL_CONNECT_STRING", "sqlite:///local.db")
@@ -23,23 +21,26 @@ Session = sessionmaker(bind=engine)
 
 Base = declarative_base()
 
+
 @contextmanager
 def session_scope():
     session = Session()
     try:
         yield session
         session.commit()
-    except:
+    except Exception:
         session.rollback()
         raise
     finally:
         session.close()
 
+
 class Statistic(Base):
-    '''Main data table
+    """Main data table
 
     TODO(zifnab): indexes + migrations
-    '''
+    """
+
     __tablename__ = "stats"
     device_id = Column(String, primary_key=True)
     model = Column(String)
@@ -52,20 +53,28 @@ class Statistic(Base):
     @classmethod
     def create(cls, data):
         with session_scope() as session:
-            session.merge(cls(
-                device_id=data['device_hash'],
-                model=data['device_name'],
-                version=data['device_version'],
-                country=data['device_country'],
-                carrier=data['device_carrier'],
-                carrier_id=data['device_carrier_id'],
-            ))
+            session.merge(
+                cls(
+                    device_id=data["device_hash"],
+                    model=data["device_name"],
+                    version=data["device_version"],
+                    country=data["device_country"],
+                    carrier=data["device_carrier"],
+                    carrier_id=data["device_carrier_id"],
+                )
+            )
 
     @classmethod
     def get_most_popular(cls, field, days):
         with session_scope() as session:
             if hasattr(cls, field):
-                return session.query(getattr(cls, field), func.count(cls.device_id).label('count')).group_by(getattr(cls, field)).order_by(desc('count'))
+                return (
+                    session.query(
+                        getattr(cls, field), func.count(cls.device_id).label("count")
+                    )
+                    .group_by(getattr(cls, field))
+                    .order_by(desc("count"))
+                )
 
     @classmethod
     def get_count(cls, days=90):
@@ -78,5 +87,5 @@ class Statistic(Base):
             limit = datetime.datetime.now() - datetime.timedelta(days=days)
             session.query(cls).filter(cls.submit_time <= limit).delete()
 
-Base.metadata.create_all(engine)
 
+Base.metadata.create_all(engine)
