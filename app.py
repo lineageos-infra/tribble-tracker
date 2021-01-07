@@ -1,5 +1,6 @@
 import json
 import os
+import pycountry
 from datetime import datetime
 from time import time
 
@@ -60,6 +61,17 @@ def load_template(name):
     return j2env.get_template(name)
 
 
+def validate_data(data, resp):
+    if BLACKLIST["device_version"].get(data["device_version"], False):
+        return False
+    country = pycountry.countries.get(alpha_2=data["device_country"])
+    if country is None:
+        data["device_country"] = "Unknown"
+    else:
+        data["device_country"] = country.alpha_2
+    return True
+
+
 class StatsApiResource(object):
 
     schema = {
@@ -87,9 +99,12 @@ class StatsApiResource(object):
     def on_post(self, req, resp):
         """Handles post requests to /api/v1/stats"""
         data = req.media
-        if not BLACKLIST["device_version"].get(data["device_version"], False):
+        if validate_data(data, resp):
             sql.Statistic.create(data)
-        resp.body = "neat"
+            resp.body = "neat"
+        else:
+            falcon.status = falcon.HTTP_BAD_REQUEST
+            resp.body = "Failed"
         resp.content_type = "text/plain"
 
     def on_get(self, req, resp):
