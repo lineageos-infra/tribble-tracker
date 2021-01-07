@@ -1,6 +1,6 @@
 LineageOS Statistics Backend
 =======================
-Copyright (c) 2017 The LineageOS Project<br>
+Copyright (c) 2017-2021 The LineageOS Project<br>
 
 
 Data Collected
@@ -28,3 +28,20 @@ Limitations
 * Devices without sim cards do not report their country, carrier, or carrier ID.
 
 All stats are displayed, you'll want to drop old data if that's a thing you care about. We keep 90 days. Only the last checkin for each device is kept.
+
+
+Installation
+=======================
+
+* Install the required packages using `pip install -r requirements.txt`
+* If it fails for a package named `psycopg2` you may need to install two additional packages:
+  `sudo apt install libpq-dev python3-dev`
+
+
+Deployment
+=======================
+
+* If you want to deploy it on your local machine, you can use [gunicorn](https://gunicorn.org/#quickstart)
+* After installation, from the folder of the tracker, execute `gunicorn app:app -b 0.0.0.0:8080 -w 9 --max-requests 1000 --max-requests-jitter 500`
+
+If you use Docker, you can use the Dockerfile contained in this project.
