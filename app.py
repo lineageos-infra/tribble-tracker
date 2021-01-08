@@ -59,6 +59,10 @@ class PrometheusMetricsResource(object):
 def load_template(name):
     return j2env.get_template(name)
 
+def normalize_country(country):
+    if len(country) != 2:
+        return "Unknown"
+    return lower(country)
 
 class StatsApiResource(object):
 
@@ -88,6 +92,7 @@ class StatsApiResource(object):
         """Handles post requests to /api/v1/stats"""
         data = req.media
         if not BLACKLIST["device_version"].get(data["device_version"], False):
+            data["device_country"] = normalize_country(data["device_country"])
             sql.Statistic.create(data)
         resp.body = "neat"
         resp.content_type = "text/plain"
