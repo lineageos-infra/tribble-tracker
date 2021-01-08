@@ -59,10 +59,12 @@ class PrometheusMetricsResource(object):
 def load_template(name):
     return j2env.get_template(name)
 
+
 def normalize_country(country):
     if len(country) != 2:
         return "Unknown"
-    return lower(country)
+    return country.upper()
+
 
 class StatsApiResource(object):
 
