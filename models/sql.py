@@ -49,7 +49,11 @@ class Statistic(Base):
     carrier = Column(String)
     carrier_id = Column(String)
     submit_time = Column(DateTime, server_default=func.now())
-    version = Column(String, Computed("substring(version, '^\d\d\.\d')"))
+    if SQL_CONNECT_STRING.startswith("sqlite://"):
+        computed = "substr(version_raw, 0, 3)"
+    else:
+        computed = "substring(version_raw, '^\\d\\d\\.\\d')"
+    version = Column(String, Computed(computed))
 
     @classmethod
     def create(cls, data):
