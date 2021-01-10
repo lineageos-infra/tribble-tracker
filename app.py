@@ -5,19 +5,12 @@ from time import time
 
 import falcon
 import jinja2
+
 from falcon.media.validators import jsonschema
-from falcon_caching import Cache
 
 from models import sql
 from middleware.prometheus import PrometheusMetricsResource, PrometheusComponent
 
-cache = Cache(
-    config={
-        "CACHE_TYPE": os.environ.get("CACHE_TYPE", "null"),
-        "CACHE_EVICTION_STRATEGY": "time-based",
-        "CACHE_REDIS_URL": os.environ.get("CACHE_REDIS_URL"),
-    }
-)
 
 j2env = jinja2.Environment(
     loader=jinja2.FileSystemLoader("templates"),
@@ -28,7 +21,6 @@ j2env = jinja2.Environment(
 # or they're maliciously inflating their values. As such, we reject stats
 # coming from them.
 BLACKLIST = {"device_version": {"13.0-20180304-UNOFFICIAL-ht16": True}}
-
 
 def load_template(name):
     return j2env.get_template(name)
@@ -73,7 +65,6 @@ class StatsApiResource(object):
         resp.body = "neat"
         resp.content_type = "text/plain"
 
-    @cache.cached(timeout=3600)
     def on_get(self, req, resp):
         """Handles get requests to /api/v1/stats"""
         stats = {
@@ -90,7 +81,6 @@ class StatsApiResource(object):
 
 
 class StaticResource(object):
-    @cache.cached(timeout=600)
     def on_get(self, req, resp, kind, filename):
         if kind == "css":
             resp.content_type = "text/css"
@@ -100,7 +90,6 @@ class StaticResource(object):
 
 
 class IndexResource(object):
-    @cache.cached(timeout=3600)
     def on_get(self, req, resp):
         """Render the main page"""
         stats = {
@@ -118,7 +107,6 @@ class IndexResource(object):
 
 
 class FieldResource(object):
-    @cache.cached(timeout=3600)
     def on_get(self, req, resp, field, value):
         if field not in ["model", "carrier", "version", "country"]:
             resp.status = falcon.HTTP_404
@@ -149,7 +137,7 @@ class FieldResource(object):
         resp.body = template
 
 
-app = falcon.API(middleware=[PrometheusComponent(), cache.middleware])
+app = falcon.API(middleware=[PrometheusComponent()])
 app.add_route("/", IndexResource())
 app.add_route("/{field}/{value}", FieldResource())
 app.add_route("/static/{kind}/{filename}", StaticResource())
