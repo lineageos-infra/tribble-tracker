@@ -106,6 +106,9 @@ class StatsApiResource(object):
             "country": {
                 x[0]: x[1] for x in sql.Statistic.get_most_popular("country", 90)
             },
+            "version": {
+                x[0]: x[1] for x in sql.Statistic.get_most_popular("version", 90)
+            },
             "total": sql.Statistic.get_count(90).first()[0],
         }
         resp.body = json.dumps(stats)
