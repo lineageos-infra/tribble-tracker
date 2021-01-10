@@ -3,7 +3,7 @@ import os
 
 from contextlib import contextmanager
 
-from sqlalchemy import Column, String, DateTime, create_engine
+from sqlalchemy import Column, String, DateTime, create_engine, Computed
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.orm import sessionmaker
