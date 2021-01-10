@@ -7,16 +7,10 @@ import falcon
 import jinja2
 
 from falcon.media.validators import jsonschema
-from prometheus_client import (
-    multiprocess,
-    generate_latest,
-    CollectorRegistry,
-    CONTENT_TYPE_LATEST,
-    Counter,
-    Histogram,
-)
 
 from models import sql
+from middleware.prometheus import PrometheusMetricsResource, PrometheusComponent
+
 
 j2env = jinja2.Environment(
     loader=jinja2.FileSystemLoader("templates"),
@@ -27,34 +21,6 @@ j2env = jinja2.Environment(
 # or they're maliciously inflating their values. As such, we reject stats
 # coming from them.
 BLACKLIST = {"device_version": {"13.0-20180304-UNOFFICIAL-ht16": True}}
-
-
-REQUEST_LATENCY = Histogram(
-    "falcon_request_latency_seconds", "Request Latency", ["method", "endpoint"]
-)
-REQUEST_COUNT = Counter(
-    "falcon_request_count", "Request Count", ["method", "endpoint", "status"]
-)
-
-
-class PrometheusComponent(object):
-    def process_request(self, req, resp):
-        req.context["start_time"] = time()
-
-    def process_response(self, req, resp, resource, req_suceeded):
-        delta = time() - req.context["start_time"]
-        if req.relative_uri in ["/api/v1/stats", "/"]:
-            REQUEST_LATENCY.labels(req.method, req.relative_uri).observe(delta)
-            REQUEST_COUNT.labels(req.method, req.relative_uri, resp.status).inc()
-
-
-class PrometheusMetricsResource(object):
-    def on_get(self, req, resp):
-        registry = CollectorRegistry()
-        multiprocess.MultiProcessCollector(registry)
-        resp.body = generate_latest(registry)
-        resp.content_type = CONTENT_TYPE_LATEST
-
 
 def load_template(name):
     return j2env.get_template(name)
