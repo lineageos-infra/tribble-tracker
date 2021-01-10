@@ -20,7 +20,16 @@ j2env = jinja2.Environment(
 # These things are either misconfigured to not send a static device_id
 # or they're maliciously inflating their values. As such, we reject stats
 # coming from them.
-BLACKLIST = {"device_version": {"13.0-20180304-UNOFFICIAL-ht16": True}}
+BLACKLIST = {
+    "device_version": {
+        "13.0-20180304-UNOFFICIAL-ht16": True,
+        "15.1-20201008-UNOFFICIAL-sagit": True,
+        "15.1-20200901-UNOFFICIAL-sagit": True,
+        "15.1-20200708-UNOFFICIAL-sagit": True,
+        "15.1-20200619-UNOFFICIAL-sagit": True,
+    }
+}
+
 
 def load_template(name):
     return j2env.get_template(name)

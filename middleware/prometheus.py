@@ -15,6 +15,7 @@ REQUEST_COUNT = Counter(
     "falcon_request_count", "Request Count", ["method", "endpoint", "status"]
 )
 
+
 class PrometheusMetricsResource(object):
     def on_get(self, req, resp):
         registry = CollectorRegistry()
