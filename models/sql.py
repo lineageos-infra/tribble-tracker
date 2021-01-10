@@ -44,11 +44,12 @@ class Statistic(Base):
     __tablename__ = "stats"
     device_id = Column(String, primary_key=True)
     model = Column(String)
-    version = Column(String)
+    version_raw = Column(String)
     country = Column(String)
     carrier = Column(String)
     carrier_id = Column(String)
     submit_time = Column(DateTime, server_default=func.now())
+    version = Column(String, Computed("substring(version, '^\d\d\.\d')"))
 
     @classmethod
     def create(cls, data):
@@ -57,7 +58,7 @@ class Statistic(Base):
                 cls(
                     device_id=data["device_hash"],
                     model=data["device_name"],
-                    version=data["device_version"],
+                    version_raw=data["device_version"],
                     country=data["device_country"],
                     carrier=data["device_carrier"],
                     carrier_id=data["device_carrier_id"],
