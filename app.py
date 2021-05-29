@@ -116,7 +116,7 @@ class IndexResource(object):
 
 
 class RobotsResource(object):
-    def on_get(self, req, resp, field, value):
+    def on_get(self, req, resp):
         resp.status = falcon.HTTP_200
         resp.content_type = "text/plain"
         resp.body = "User-agent: *\nDisallow: /"
