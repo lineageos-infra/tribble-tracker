@@ -115,6 +115,14 @@ class IndexResource(object):
         resp.body = template
 
 
+class RobotsResource(object):
+    def on_get(self, req, resp, field, value):
+        resp.status = falcon.HTTP_200
+        resp.content_type = "text/plain"
+        resp.body = "User-agent: *\nDisallow: /"
+        return
+
+
 class FieldResource(object):
     def on_get(self, req, resp, field, value):
         if field not in ["model", "carrier", "version", "country"]:
@@ -148,6 +156,7 @@ class FieldResource(object):
 
 app = falcon.API(middleware=[PrometheusComponent()])
 app.add_route("/", IndexResource())
+app.add_route("/robots.txt", RobotsResource())
 app.add_route("/{field}/{value}", FieldResource())
 app.add_route("/static/{kind}/{filename}", StaticResource())
 app.add_route("/api/v1/stats", StatsApiResource())
