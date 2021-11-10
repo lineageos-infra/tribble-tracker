@@ -70,7 +70,7 @@ class Statistic(Base):
             )
 
     @classmethod
-    def get_most_popular(cls, field, days):
+    def get_most_popular(cls, field, days, truncate=True):
         with session_scope() as session:
             if hasattr(cls, field):
                 return (
@@ -79,6 +79,7 @@ class Statistic(Base):
                     )
                     .group_by(getattr(cls, field))
                     .order_by(desc("count"))
+                    .limit(250 if truncate else 100000)
                 )
 
     @classmethod
