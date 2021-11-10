@@ -27,6 +27,9 @@ BLACKLIST = {
         "15.1-20200901-UNOFFICIAL-sagit": True,
         "15.1-20200708-UNOFFICIAL-sagit": True,
         "15.1-20200619-UNOFFICIAL-sagit": True,
+        "17.1-20210813-UNOFFICIAL-tissot": True,
+        "18.1-20210914-UNOFFICIAL-tissot": True,
+        "17.1-20200715-UNOFFICIAL-tissot": True,
     }
 }
 
