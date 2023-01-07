@@ -169,7 +169,10 @@ func main() {
 			fmt.Println(err)
 		}
 		data.Total = total
-		tmpl.Execute(w, data)
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			fmt.Println(err)
+		}
 	})
 
 	http.ListenAndServe(":8080", r)
