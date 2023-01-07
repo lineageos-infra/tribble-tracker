@@ -24,7 +24,11 @@
 			<div id="top-devices" class="leaderboard">
 				<div class="leaderboard-header">Most active {{.LeftName}}</div>
 				{{ range $index, $thing := .Left }}
-				<div class="leaderboard-row leaderboard-row-{{/* 'a' if loop.index % 2 == 0 else 'b' */}}">
+				{{ if $index % 2 == 0 }}
+				<div class="leaderboard-row leaderboard-row-a">
+				{{ else }}
+				<div class="leaderboard-row leaderboard-row-b">
+				{{ end }}
 					<span class="leaderboard-left">{{ $index }}. <a href="/{{$.LeftName | ToLower}}/{{$thing.Item}}">{{ $thing.Item }}</a></span>
 					<span class="leaderboard-right">{{ $thing.Count }}</span>
 				</div>
@@ -45,7 +49,11 @@
 			<div id="top-countries" class="leaderboard">
 				<div class="leaderboard-header">Most active {{.RightName}}</div>
 				{{ range $index, $thing := .Right }}
-				<div class="leaderboard-row leaderboard-row-{{/* 'a' if loop.index % 2 == 0 else 'b' */}}">
+				{{ if $index % 2 == 0 }}
+				<div class="leaderboard-row leaderboard-row-a">
+				{{ else }}
+				<div class="leaderboard-row leaderboard-row-b">
+				{{ end }}
 					<span class="leaderboard-left">{{ $index }}. <a href="/{{$.RightName | ToLower}}/{{$thing.Item}}">{{ $thing.Item }}</a></span>
 					<span class="leaderboard-right">{{ $thing.Count }}</span>
 				</div>
