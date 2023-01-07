@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:100,400');
+
+body {
+	background-color: #1F1F1F;
+	color: white;
+	font-family: Roboto, sans-serif;
+	font-size: 1.5em;
+}
+
+#content {
+	padding: 10px;
+}
+
+.aside {
+	display: inline-block;
+	text-align: center;
+	position: relative;
+	width: 100%;
+}
+
+.aside-value {
+	font-weight: 100;
+	font-size: 4em;
+}
+
+.leaderboard {
+	position: relative;
+	width: 100%;
+	display: inline-block;
+}
+
+.leaderboard-header {
+	text-align: center;
+}
+
+.leaderboard-row {
+	border-radius: 5px;
+	padding: 5px;
+}
+
+.leaderboard-row-a {
+	background-color: #167C80;
+}
+
+.leaderboard-right {
+	float: right;
+}
+
+a {
+    text-decoration: none;
+    color: white;
+}

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -18,13 +19,15 @@ import (
 type Config struct {
 	DatabaseUri  string
 	TemplatePath string
+	StaticPath   string
 }
 
 type TemplateData struct {
-	Left      map[string]int
-	Right     map[string]int
+	Left      []db.Stat
+	Right     []db.Stat
 	LeftName  string
 	RightName string
+	Thing     string
 	Total     int
 }
 
@@ -33,6 +36,10 @@ func (c *Config) Load() {
 	c.TemplatePath = os.Getenv("TEMPLATE_PATH")
 	if c.TemplatePath == "" {
 		c.TemplatePath = "templates/index.html"
+	}
+	c.StaticPath = os.Getenv("STATIC_PATH")
+	if c.StaticPath == "" {
+		c.StaticPath = "static/"
 	}
 }
 
@@ -46,7 +53,14 @@ func main() {
 	}
 	defer client.Close()
 
-	tmpl, err := ioutil.ReadFile(config.TemplatePath)
+	rawTmpl, err := ioutil.ReadFile(config.TemplatePath)
+	if err != nil {
+		panic(err)
+	}
+	funcMap := template.FuncMap{
+		"ToLower": strings.ToLower,
+	}
+	tmpl, err := template.New("stats").Funcs(funcMap).Parse(string(rawTmpl))
 	if err != nil {
 		panic(err)
 	}
@@ -129,14 +143,32 @@ func main() {
 		w.Write([]byte("User-agent: *\nDisallow: /"))
 	})
 
+	staticServer := http.FileServer(http.Dir(config.StaticPath))
+	r.Handle("/static/*", http.StripPrefix("/static", staticServer))
+
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		t, err := template.New("stats").Parse(string(tmpl))
+
+		data := TemplateData{
+			LeftName:  "Model",
+			RightName: "Country",
+			Thing:     "active",
+		}
+		left, err := client.GetMostPopular("model")
 		if err != nil {
 			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
 		}
-		t.Execute(w, nil)
+		data.Left = left
+		right, err := client.GetMostPopular("country")
+		if err != nil {
+			fmt.Println(err)
+		}
+		data.Right = right
+		total, err := client.GetCount()
+		if err != nil {
+			fmt.Println(err)
+		}
+		data.Total = total
+		tmpl.Execute(w, data)
 	})
 
 	fmt.Println("hi")
