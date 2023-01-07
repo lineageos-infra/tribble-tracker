@@ -171,7 +171,5 @@ func main() {
 		tmpl.Execute(w, data)
 	})
 
-	fmt.Println("hi")
-
 	http.ListenAndServe("localhost:8080", r)
 }
