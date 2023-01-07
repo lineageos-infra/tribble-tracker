@@ -47,7 +47,7 @@ func (c *postgresClient) InsertStatistic(stat Statistic) error {
 	return nil
 }
 
-func (c *postgresClient) GetMostPopular(field string) (map[string]int, error) {
+func (c *postgresClient) GetMostPopular(field string) ([]Stat, error) {
 	whitelist := map[string]interface{}{
 		"version": nil,
 		"model":   nil,
@@ -72,21 +72,21 @@ func (c *postgresClient) GetMostPopular(field string) (map[string]int, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	data := make(map[string]int)
+	var result []Stat
 	for rows.Next() {
 		var name string
 		var count int
 		err := rows.Scan(&name, &count)
 		if err != nil {
 		}
-		data[name] = count
+		result = append(result, Stat{Item: name, Count: count})
 
 	}
 	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	return result, nil
 }
 func (c *postgresClient) GetCount() (int, error) {
 	row := c.db.QueryRow(`SELECT count(device_id) FROM stats`)

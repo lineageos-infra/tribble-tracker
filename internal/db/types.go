@@ -8,3 +8,7 @@ type Statistic struct {
 	Carrier   string `json:"device_carrier"`
 	CarrierId string `json:"device_carrier_id"`
 }
+type Stat struct {
+	Item  string
+	Count int
+}

@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -14,11 +16,24 @@ import (
 )
 
 type Config struct {
-	DatabaseUri string
+	DatabaseUri  string
+	TemplatePath string
+}
+
+type TemplateData struct {
+	Left      map[string]int
+	Right     map[string]int
+	LeftName  string
+	RightName string
+	Total     int
 }
 
 func (c *Config) Load() {
 	c.DatabaseUri = os.Getenv("DATABASE_URI")
+	c.TemplatePath = os.Getenv("TEMPLATE_PATH")
+	if c.TemplatePath == "" {
+		c.TemplatePath = "templates/index.html"
+	}
 }
 
 func main() {
@@ -30,6 +45,11 @@ func main() {
 		panic(err)
 	}
 	defer client.Close()
+
+	tmpl, err := ioutil.ReadFile(config.TemplatePath)
+	if err != nil {
+		panic(err)
+	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -56,36 +76,49 @@ func main() {
 			w.WriteHeader(200)
 		})
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			type Response struct {
-				Model   map[string]int `json:"model"`
-				Country map[string]int `json:"country"`
-				Version map[string]int `json:"version"`
-				Total   map[string]int `json:"total"`
-			}
-			model, err := client.GetMostPopular("model")
-			if err != nil {
-			}
-			country, err := client.GetMostPopular("country")
-			if err != nil {
-			}
-			version, err := client.GetMostPopular("version")
-			if err != nil {
-			}
-			total, err := client.GetCount()
-			if err != nil {
-			}
-
 			resp := struct {
 				Model   map[string]int `json:"model"`
 				Country map[string]int `json:"country"`
 				Version map[string]int `json:"version"`
 				Total   int            `json:"total"`
 			}{
-				Model:   model,
-				Country: country,
-				Version: version,
-				Total:   total,
+				Model:   map[string]int{},
+				Country: map[string]int{},
+				Version: map[string]int{},
+				Total:   0,
 			}
+
+			model, err := client.GetMostPopular("model")
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Println(err)
+			}
+			country, err := client.GetMostPopular("country")
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Println(err)
+			}
+			version, err := client.GetMostPopular("version")
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Println(err)
+			}
+			total, err := client.GetCount()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Println(err)
+			}
+
+			for _, i := range model {
+				resp.Model[i.Item] = i.Count
+			}
+			for _, i := range country {
+				resp.Country[i.Item] = i.Count
+			}
+			for _, i := range version {
+				resp.Version[i.Item] = i.Count
+			}
+			resp.Total = total
 
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(resp)
@@ -97,10 +130,13 @@ func main() {
 	})
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		_, err := client.GetMostPopular("version")
+		t, err := template.New("stats").Parse(string(tmpl))
 		if err != nil {
 			fmt.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
+		t.Execute(w, nil)
 	})
 
 	fmt.Println("hi")
