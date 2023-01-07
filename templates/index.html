@@ -24,7 +24,7 @@
 			<div id="top-devices" class="leaderboard">
 				<div class="leaderboard-header">Most active {{.LeftName}}</div>
 				{{ range $index, $thing := .Left }}
-				{{ if $index % 2 == 0 }}
+				{{ if $index mod 2 }}
 				<div class="leaderboard-row leaderboard-row-a">
 				{{ else }}
 				<div class="leaderboard-row leaderboard-row-b">
@@ -49,7 +49,7 @@
 			<div id="top-countries" class="leaderboard">
 				<div class="leaderboard-header">Most active {{.RightName}}</div>
 				{{ range $index, $thing := .Right }}
-				{{ if $index % 2 == 0 }}
+				{{ if $index mod 2 }}
 				<div class="leaderboard-row leaderboard-row-a">
 				{{ else }}
 				<div class="leaderboard-row leaderboard-row-b">
