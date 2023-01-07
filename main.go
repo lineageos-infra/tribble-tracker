@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/lineageos-infra/tribble-tracker/internal/db"
 )
 
 type Config struct {
@@ -22,26 +21,15 @@ func (c *Config) Load() {
 	c.DatabaseUri = os.Getenv("DATABASE_URI")
 }
 
-type Statistic struct {
-	Hash      string `json:"device_hash"`
-	Name      string `json:"device_name"`
-	Version   string `json:"device_version"`
-	Country   string `json:"device_country"`
-	Carrier   string `json:"device_carrier"`
-	CarrierId string `json:"device_carrier_id"`
-}
-
 func main() {
 	var config Config
 	config.Load()
 
-	fmt.Println(config.DatabaseUri)
-
-	db, err := sql.Open("postgres", config.DatabaseUri)
+	client, err := db.NewPostgresClient(config.DatabaseUri)
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer client.Close()
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -49,7 +37,7 @@ func main() {
 	r.Route("/api/v1/stats", func(r chi.Router) {
 		r.Use(middleware.AllowContentEncoding("application/json"))
 		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-			stat := Statistic{}
+			stat := db.Statistic{}
 			err := json.NewDecoder(r.Body).Decode(&stat)
 			if err != nil {
 				// json was invalid, this is a bad request
@@ -57,16 +45,8 @@ func main() {
 				return
 			}
 
-			stmt, err := db.Prepare("INSERT INTO statistics(device_id, model, version_raw, country, carrier, carrier_id) VALUES ($1, $2, $3, $4, $5, $6)")
+			err = client.InsertStatistic(stat)
 			if err != nil {
-				fmt.Printf("error preparing: %s\n", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("sql error"))
-				return
-			}
-			_, err = stmt.Exec(stat.Hash, stat.Name, stat.Version, stat.Country, stat.Carrier, stat.CarrierId)
-			if err != nil {
-				fmt.Printf("error execing: %s\n", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte("sql error"))
 				return
@@ -75,6 +55,52 @@ func main() {
 			w.Write([]byte("neat"))
 			w.WriteHeader(200)
 		})
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			type Response struct {
+				Model   map[string]int `json:"model"`
+				Country map[string]int `json:"country"`
+				Version map[string]int `json:"version"`
+				Total   map[string]int `json:"total"`
+			}
+			model, err := client.GetMostPopular("model")
+			if err != nil {
+			}
+			country, err := client.GetMostPopular("country")
+			if err != nil {
+			}
+			version, err := client.GetMostPopular("version")
+			if err != nil {
+			}
+			total, err := client.GetCount()
+			if err != nil {
+			}
+
+			resp := struct {
+				Model   map[string]int `json:"model"`
+				Country map[string]int `json:"country"`
+				Version map[string]int `json:"version"`
+				Total   int            `json:"total"`
+			}{
+				Model:   model,
+				Country: country,
+				Version: version,
+				Total:   total,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(resp)
+		})
+	})
+	r.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("User-agent: *\nDisallow: /"))
+	})
+
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		_, err := client.GetMostPopular("version")
+		if err != nil {
+			fmt.Println(err)
+		}
 	})
 
 	fmt.Println("hi")

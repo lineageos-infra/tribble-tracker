@@ -1,11 +1,13 @@
-CREATE TABLE IF NOT EXISTS statistics (
-    device_id varchar(60) NOT NULL,
-    model varchar(60) NOT NULL,
-    version_raw varchar(60) NOT NULL,
-    country varchar(60) NOT NULL,
-    carrier varchar(60) NOT NULL,
-    carrier_id varchar(60) NOT NULL,
-    submit_time timestamp default now(),
-    version varchar(4) GENERATED ALWAYS AS (substring(version_raw from '^\d\d\.\d'))vi
+CREATE TABLE IF NOT EXISTS stats (
+    device_id character varying NOT NULL,
+    model character varying,
+    version_raw character varying,
+    country character varying,
+    carrier character varying,
+    carrier_id character varying,
+    submit_time timestamp without time zone DEFAULT now(),
+    version character varying GENERATED ALWAYS AS ("substring"((version_raw)::text, '^\d\d\.\d'::text)) STORED,
+
+    CONSTRAINT stats_pkey PRIMARY KEY (device_id)
 );
 
