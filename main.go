@@ -103,17 +103,17 @@ func main() {
 				Total:   0,
 			}
 
-			model, err := client.GetMostPopular("model")
+			model, err := client.GetMostPopular("model", "", "")
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Println(err)
 			}
-			country, err := client.GetMostPopular("country")
+			country, err := client.GetMostPopular("country", "", "")
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Println(err)
 			}
-			version, err := client.GetMostPopular("version")
+			version, err := client.GetMostPopular("version", "", "")
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Println(err)
@@ -154,12 +154,12 @@ func main() {
 			RightName: "Country",
 			Thing:     "active",
 		}
-		left, err := client.GetMostPopular("model")
+		left, err := client.GetMostPopular("model", "", "")
 		if err != nil {
 			fmt.Println(err)
 		}
 		data.Left = left
-		right, err := client.GetMostPopular("country")
+		right, err := client.GetMostPopular("country", "", "")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -169,6 +169,50 @@ func main() {
 			fmt.Println(err)
 		}
 		data.Total = total
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			fmt.Println(err)
+		}
+	})
+
+	r.Get("/{thing}/{name}", func(w http.ResponseWriter, r *http.Request) {
+		thing := chi.URLParam(r, "thing")
+		name := chi.URLParam(r, "name")
+
+		data := TemplateData{
+			Thing: name,
+		}
+		// do Left
+		if thing == "model" {
+			data.LeftName = "Version"
+			left, err := client.GetMostPopular("version", thing, name)
+			if err != nil {
+				fmt.Println(err)
+			}
+			data.Left = left
+		} else {
+			data.LeftName = "Model"
+			left, err := client.GetMostPopular("model", thing, name)
+			if err != nil {
+				fmt.Println(err)
+			}
+			data.Left = left
+		}
+		if thing == "country" {
+			data.RightName = "Carrier"
+			right, err := client.GetMostPopular("carrier", thing, name)
+			if err != nil {
+				fmt.Println(err)
+			}
+			data.Right = right
+		} else {
+			data.RightName = "Country"
+			right, err := client.GetMostPopular("country", thing, name)
+			if err != nil {
+				fmt.Println(err)
+			}
+			data.Right = right
+		}
 		err = tmpl.Execute(w, data)
 		if err != nil {
 			fmt.Println(err)

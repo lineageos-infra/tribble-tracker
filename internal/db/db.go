@@ -47,7 +47,7 @@ func (c *postgresClient) InsertStatistic(stat Statistic) error {
 	return nil
 }
 
-func (c *postgresClient) GetMostPopular(field string) ([]Stat, error) {
+func (c *postgresClient) GetMostPopular(field string, column string, filterable string) ([]Stat, error) {
 	whitelist := map[string]interface{}{
 		"version": nil,
 		"model":   nil,
@@ -58,18 +58,40 @@ func (c *postgresClient) GetMostPopular(field string) ([]Stat, error) {
 		// field wasn't valid, reject
 		return nil, fmt.Errorf("invalid field: %s", field)
 	}
-	stmt, err := c.db.Prepare(fmt.Sprintf(`
-	SELECT %s, count(%s) FROM stats
-	GROUP BY %s
-	ORDER BY count DESC
-	`, field, field, field))
-	if err != nil {
-		return nil, err
-	}
+	var rows *sql.Rows
+	if column == "" {
+		stmt, err := c.db.Prepare(fmt.Sprintf(`
+			SELECT %s, count(%s) FROM stats
+			GROUP BY %s
+			ORDER BY count DESC
+			`, field, field, field))
+		if err != nil {
+			return nil, err
+		}
 
-	rows, err := stmt.Query()
-	if err != nil {
-		return nil, err
+		rows, err = stmt.Query()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		if _, ok := whitelist[column]; !ok {
+			// column wasn't valid, reject
+			return nil, fmt.Errorf("invalid column: %s", field)
+		}
+
+		stmt, err := c.db.Prepare(fmt.Sprintf(`
+			SELECT %s, count(%s) FROM stats
+			WHERE %s = $1
+			GROUP BY %s
+			ORDER BY count DESC
+		`, field, field, column, field))
+		if err != nil {
+			return nil, err
+		}
+		rows, err = stmt.Query(filterable)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer rows.Close()
 	var result []Stat
@@ -82,7 +104,7 @@ func (c *postgresClient) GetMostPopular(field string) ([]Stat, error) {
 		result = append(result, Stat{Item: name, Count: count})
 
 	}
-	err = rows.Err()
+	err := rows.Err()
 	if err != nil {
 		return nil, err
 	}
