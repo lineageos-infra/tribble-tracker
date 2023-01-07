@@ -64,6 +64,7 @@ func (c *postgresClient) GetMostPopular(field string, column string, filterable 
 			SELECT %s, count(%s) FROM stats
 			GROUP BY %s
 			ORDER BY count DESC
+			LIMIT 250
 			`, field, field, field))
 		if err != nil {
 			return nil, err
@@ -84,6 +85,7 @@ func (c *postgresClient) GetMostPopular(field string, column string, filterable 
 			WHERE %s = $1
 			GROUP BY %s
 			ORDER BY count DESC
+			LIMIT 250
 		`, field, field, column, field))
 		if err != nil {
 			return nil, err
