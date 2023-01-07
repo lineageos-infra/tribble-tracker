@@ -220,7 +220,24 @@ func main() {
 			fmt.Println(err)
 		}
 		data.Total = total
-		data.Thing = fmt.Sprintf("%s %s", thing, name)
+		switch thing {
+		case "model":
+			data.Thing = name
+		case "country":
+			if name == "Unknown" {
+				data.Thing = "Unknown country"
+			} else {
+				data.Thing = name
+			}
+		case "version":
+			data.Thing = fmt.Sprintf("version %s", name)
+		case "carrier":
+			if name == "Unknown" {
+				data.Thing = "Unknown country"
+			} else {
+				data.Thing = name
+			}
+		}
 		err = tmpl.Execute(w, data)
 		if err != nil {
 			fmt.Println(err)
