@@ -128,7 +128,7 @@ func (c *postgresClient) GetCount(column string, filterable string) (int, error)
 			// column wasn't valid, reject
 			return 0, fmt.Errorf("invalid column: %s", column)
 		}
-		stmt, err := c.db.Prepare(fmt.Sprintf(`SELECT count(device_id) WHERE %s = $1`, column))
+		stmt, err := c.db.Prepare(fmt.Sprintf(`SELECT count(device_id) FROM stats WHERE %s = $1`, column))
 		if err != nil {
 			return 0, err
 		}
