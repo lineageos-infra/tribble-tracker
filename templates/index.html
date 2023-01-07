@@ -29,7 +29,7 @@
 				{{ else }}
 				<div class="leaderboard-row leaderboard-row-b">
 				{{ end }}
-					<span class="leaderboard-left">{{ $index }}. <a href="/{{$.LeftName | ToLower}}/{{$thing.Item}}">{{ $thing.Item }}</a></span>
+					<span class="leaderboard-left">{{ inc $index }}. <a href="/{{$.LeftName | ToLower}}/{{$thing.Item}}">{{ $thing.Item }}</a></span>
 					<span class="leaderboard-right">{{ $thing.Count }}</span>
 				</div>
 				{{ end }}
@@ -54,7 +54,7 @@
 				{{ else }}
 				<div class="leaderboard-row leaderboard-row-b">
 				{{ end }}
-					<span class="leaderboard-left">{{ $index }}. <a href="/{{$.RightName | ToLower}}/{{$thing.Item}}">{{ $thing.Item }}</a></span>
+					<span class="leaderboard-left">{{ inc $index }}. <a href="/{{$.RightName | ToLower}}/{{$thing.Item}}">{{ $thing.Item }}</a></span>
 					<span class="leaderboard-right">{{ $thing.Count }}</span>
 				</div>
 				{{ end }}

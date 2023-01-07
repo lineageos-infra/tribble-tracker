@@ -60,6 +60,7 @@ func main() {
 	funcMap := template.FuncMap{
 		"ToLower": strings.ToLower,
 		"mod":     func(i int, j int) bool { return i%j == 0 },
+		"inc":     func(i int) int { return i + 1 },
 	}
 	tmpl, err := template.New("stats").Funcs(funcMap).Parse(string(rawTmpl))
 	if err != nil {
