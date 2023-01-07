@@ -77,7 +77,7 @@ func (c *postgresClient) GetMostPopular(field string, column string, filterable 
 	} else {
 		if _, ok := whitelist[column]; !ok {
 			// column wasn't valid, reject
-			return nil, fmt.Errorf("invalid column: %s", field)
+			return nil, fmt.Errorf("invalid column: %s", column)
 		}
 
 		stmt, err := c.db.Prepare(fmt.Sprintf(`
@@ -112,12 +112,33 @@ func (c *postgresClient) GetMostPopular(field string, column string, filterable 
 	}
 	return result, nil
 }
-func (c *postgresClient) GetCount() (int, error) {
-	row := c.db.QueryRow(`SELECT count(device_id) FROM stats`)
+func (c *postgresClient) GetCount(column string, filterable string) (int, error) {
+	whitelist := map[string]interface{}{
+		"version": nil,
+		"model":   nil,
+		"country": nil,
+		"carrier": nil,
+	}
+
+	var row *sql.Row
+	if column == "" {
+		row = c.db.QueryRow(`SELECT count(device_id) FROM stats`)
+	} else {
+		if _, ok := whitelist[column]; !ok {
+			// column wasn't valid, reject
+			return 0, fmt.Errorf("invalid column: %s", column)
+		}
+		stmt, err := c.db.Prepare(fmt.Sprintf(`SELECT count(device_id) WHERE %s = $1`, column))
+		if err != nil {
+			return 0, err
+		}
+		row = stmt.QueryRow(filterable)
+	}
 	err := row.Err()
 	if err != nil {
 		return 0, err
 	}
+
 	var count int
 	row.Scan(&count)
 	return count, nil

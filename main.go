@@ -119,7 +119,7 @@ func main() {
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Println(err)
 			}
-			total, err := client.GetCount()
+			total, err := client.GetCount("", "")
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Println(err)
@@ -165,7 +165,7 @@ func main() {
 			fmt.Println(err)
 		}
 		data.Right = right
-		total, err := client.GetCount()
+		total, err := client.GetCount("", "")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -214,6 +214,13 @@ func main() {
 			}
 			data.Right = right
 		}
+
+		total, err := client.GetCount(thing, name)
+		if err != nil {
+			fmt.Println(err)
+		}
+		data.Total = total
+		data.Thing = fmt.Sprintf("%s %s", thing, name)
 		err = tmpl.Execute(w, data)
 		if err != nil {
 			fmt.Println(err)
