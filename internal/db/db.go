@@ -12,8 +12,8 @@ type postgresClient struct {
 	db *sql.DB
 }
 
-func NewPostgresClient(DatabaseUri string) (*postgresClient, error) {
-	db, err := sql.Open("postgres", DatabaseUri)
+func NewPostgresClient(DatabaseUrl string) (*postgresClient, error) {
+	db, err := sql.Open("postgres", DatabaseUrl)
 	if err != nil {
 		return nil, err
 	}

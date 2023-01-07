@@ -18,7 +18,7 @@ import (
 )
 
 type Config struct {
-	DatabaseUri  string
+	DatabaseUrl  string
 	TemplatePath string
 	StaticPath   string
 }
@@ -33,7 +33,7 @@ type TemplateData struct {
 }
 
 func (c *Config) Load() {
-	c.DatabaseUri = os.Getenv("DATABASE_URI")
+	c.DatabaseUrl = os.Getenv("DATABASE_URL")
 	c.TemplatePath = os.Getenv("TEMPLATE_PATH")
 	if c.TemplatePath == "" {
 		c.TemplatePath = "templates/index.html"
@@ -48,7 +48,7 @@ func main() {
 	var config Config
 	config.Load()
 
-	client, err := db.NewPostgresClient(config.DatabaseUri)
+	client, err := db.NewPostgresClient(config.DatabaseUrl)
 	if err != nil {
 		panic(err)
 	}
