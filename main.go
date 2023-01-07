@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httplog"
 	_ "github.com/lib/pq"
 	"github.com/lineageos-infra/tribble-tracker/internal/db"
 )
@@ -67,9 +68,11 @@ func main() {
 		panic(err)
 	}
 
+	logger := httplog.NewLogger("stats", httplog.Options{JSON: true})
+
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
 	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(httplog.RequestLogger(logger))
 	r.Route("/api/v1/stats", func(r chi.Router) {
 		r.Use(middleware.AllowContentEncoding("application/json"))
 		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
@@ -78,12 +81,17 @@ func main() {
 			if err != nil {
 				// json was invalid, this is a bad request
 				w.WriteHeader(http.StatusBadRequest)
+				w.Header().Add("Content-type", "text/plain")
+				w.Write([]byte("failed to decode json, was the format wrong?"))
 				return
 			}
 
 			err = client.InsertStatistic(stat)
 			if err != nil {
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to insert statistic")
 				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Add("Content-Type", "text/plain")
 				w.Write([]byte("sql error"))
 				return
 			}
@@ -106,23 +114,39 @@ func main() {
 
 			model, err := client.GetMostPopular("model", "", "")
 			if err != nil {
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to read database")
 				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Println(err)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("failed to read from database"))
+				return
 			}
 			country, err := client.GetMostPopular("country", "", "")
 			if err != nil {
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to read database")
 				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Println(err)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("failed to read from database"))
+				return
 			}
 			version, err := client.GetMostPopular("version", "", "")
 			if err != nil {
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to read database")
 				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Println(err)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("failed to read from database"))
+				return
 			}
 			total, err := client.GetCount("", "")
 			if err != nil {
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to read database")
 				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Println(err)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("failed to read from database"))
+				return
 			}
 
 			for _, i := range model {
@@ -157,22 +181,42 @@ func main() {
 		}
 		left, err := client.GetMostPopular("model", "", "")
 		if err != nil {
-			fmt.Println(err)
+			log := httplog.LogEntry(r.Context())
+			log.Error().Err(err).Msg("failed to read database")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Add("Content-Type", "text/plain")
+			w.Write([]byte("failed to read from database"))
+			return
 		}
 		data.Left = left
 		right, err := client.GetMostPopular("country", "", "")
 		if err != nil {
-			fmt.Println(err)
+			log := httplog.LogEntry(r.Context())
+			log.Error().Err(err).Msg("failed to read database")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Add("Content-Type", "text/plain")
+			w.Write([]byte("failed to read from database"))
+			return
 		}
 		data.Right = right
 		total, err := client.GetCount("", "")
 		if err != nil {
-			fmt.Println(err)
+			log := httplog.LogEntry(r.Context())
+			log.Error().Err(err).Msg("failed to read database")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Add("Content-Type", "text/plain")
+			w.Write([]byte("failed to read from database"))
+			return
 		}
 		data.Total = total
 		err = tmpl.Execute(w, data)
 		if err != nil {
-			fmt.Println(err)
+			log := httplog.LogEntry(r.Context())
+			log.Error().Err(err).Msg("failed to read database")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Add("Content-Type", "text/plain")
+			w.Write([]byte("failed to read from database"))
+			return
 		}
 	})
 
@@ -188,14 +232,24 @@ func main() {
 			data.LeftName = "Version"
 			left, err := client.GetMostPopular("version", thing, name)
 			if err != nil {
-				fmt.Println(err)
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to read database")
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("failed to read from database"))
+				return
 			}
 			data.Left = left
 		} else {
 			data.LeftName = "Model"
 			left, err := client.GetMostPopular("model", thing, name)
 			if err != nil {
-				fmt.Println(err)
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to read database")
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("failed to read from database"))
+				return
 			}
 			data.Left = left
 		}
@@ -203,21 +257,36 @@ func main() {
 			data.RightName = "Carrier"
 			right, err := client.GetMostPopular("carrier", thing, name)
 			if err != nil {
-				fmt.Println(err)
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to read database")
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("failed to read from database"))
+				return
 			}
 			data.Right = right
 		} else {
 			data.RightName = "Country"
 			right, err := client.GetMostPopular("country", thing, name)
 			if err != nil {
-				fmt.Println(err)
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to read database")
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("failed to read from database"))
+				return
 			}
 			data.Right = right
 		}
 
 		total, err := client.GetCount(thing, name)
 		if err != nil {
-			fmt.Println(err)
+			log := httplog.LogEntry(r.Context())
+			log.Error().Err(err).Msg("failed to read database")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Add("Content-Type", "text/plain")
+			w.Write([]byte("failed to read from database"))
+			return
 		}
 		data.Total = total
 		switch thing {
@@ -240,7 +309,12 @@ func main() {
 		}
 		err = tmpl.Execute(w, data)
 		if err != nil {
-			fmt.Println(err)
+			log := httplog.LogEntry(r.Context())
+			log.Error().Err(err).Msg("failed to render template")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Add("Content-Type", "text/plain")
+			w.Write([]byte("failed to render template"))
+			return
 		}
 	})
 
