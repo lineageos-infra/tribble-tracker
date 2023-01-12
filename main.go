@@ -54,6 +54,14 @@ func main() {
 	}
 	defer client.Close()
 
+	// TODO(zif): refresh this on a timer
+	banned, err := client.GetBanned()
+	if err != nil {
+		panic(err)
+	}
+
+	//TODO(zif): purge older than 90d on a timer
+
 	rawTmpl, err := ioutil.ReadFile(config.TemplatePath)
 	if err != nil {
 		panic(err)
@@ -84,6 +92,18 @@ func main() {
 				w.Header().Add("Content-type", "text/plain")
 				w.Write([]byte("failed to decode json, was the format wrong?"))
 				return
+			}
+
+			if _, found := banned.Versions[stat.Version]; found {
+				// version is banned, return neat
+				w.Write([]byte("neat"))
+				w.WriteHeader(200)
+			}
+
+			if _, found := banned.Models[stat.Name]; found {
+				// model is banned, return neat
+				w.Write([]byte("neat"))
+				w.WriteHeader(200)
 			}
 
 			err = client.InsertStatistic(stat)

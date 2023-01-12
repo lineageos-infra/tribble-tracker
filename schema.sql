@@ -16,3 +16,10 @@ CREATE INDEX stats_model ON stats(model);
 CREATE INDEX stats_version ON stats(version);
 CREATE INDEX stats_country ON stats(country);
 CREATE INDEX stats_carrier ON stats(carrier);
+
+
+CREATE TABLE IF NOT EXISTS banned (
+    version character varying,
+    model character varying,
+    note character varying
+);

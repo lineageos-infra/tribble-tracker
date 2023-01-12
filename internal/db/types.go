@@ -12,3 +12,8 @@ type Stat struct {
 	Item  string
 	Count int
 }
+
+type Banned struct {
+	Versions map[string]bool
+	Models   map[string]bool
+}

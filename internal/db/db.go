@@ -153,3 +153,31 @@ func (c *postgresClient) DropOld() error {
 	return err
 
 }
+
+func (c *postgresClient) GetBanned() (*Banned, error) {
+	rows, err := c.db.Query(`SELECT version, model FROM banned`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	banned := Banned{}
+	for rows.Next() {
+		var version string
+		var model string
+		err := rows.Scan(&version, &model)
+		if err != nil {
+			return nil, err
+		}
+		if version != "" {
+			banned.Versions[version] = true
+		}
+		if model != "" {
+			banned.Models[model] = true
+		}
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return &banned, nil
+}
