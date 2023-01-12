@@ -162,17 +162,17 @@ func (c *postgresClient) GetBanned() (*Banned, error) {
 	defer rows.Close()
 	banned := Banned{}
 	for rows.Next() {
-		var version string
-		var model string
+		var version sql.NullString
+		var model sql.NullString
 		err := rows.Scan(&version, &model)
 		if err != nil {
 			return nil, err
 		}
-		if version != "" {
-			banned.Versions[version] = true
+		if version.Valid {
+			banned.Versions[version.String] = true
 		}
-		if model != "" {
-			banned.Models[model] = true
+		if model.Valid {
+			banned.Models[model.String] = true
 		}
 	}
 	err = rows.Err()
