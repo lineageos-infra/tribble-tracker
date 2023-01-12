@@ -127,7 +127,7 @@ func main() {
 			}
 
 			// version _must_ contain  model
-			if stat.Name != "x86_64" && strings.HasSuffix(stat.Version, stat.Name) {
+			if stat.Name != "x86_64" && !strings.HasSuffix(stat.Version, stat.Name) {
 				w.WriteHeader(http.StatusBadRequest)
 				w.Header().Add("Content-Type", "text/plain")
 				w.Write([]byte("version string must end with -model"))
