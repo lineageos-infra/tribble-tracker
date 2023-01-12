@@ -149,7 +149,7 @@ func (c *postgresClient) DropOld() error {
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(stmt, time.Now().Add(-90*24*time.Hour))
+	_, err = stmt.Exec(time.Now().Add(-90 * 24 * time.Hour))
 	return err
 
 }
