@@ -2,6 +2,10 @@ LineageOS Statistics Backend
 =======================
 Copyright (c) 2017 The LineageOS Project<br>
 
+NOTICE
+=======================
+
+This branch is the old python implementation. Please see the `main` branch for current code.
 
 Data Collected
 =======================
