@@ -17,3 +17,10 @@ type Banned struct {
 	Versions map[string]bool
 	Models   map[string]bool
 }
+
+func NewBanned() *Banned {
+	banned := Banned{}
+	banned.Models = make(map[string]bool)
+	banned.Versions = make(map[string]bool)
+	return &banned
+}

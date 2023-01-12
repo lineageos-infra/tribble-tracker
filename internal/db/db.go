@@ -161,6 +161,8 @@ func (c *postgresClient) GetBanned() (*Banned, error) {
 	}
 	defer rows.Close()
 	banned := Banned{}
+	banned.Models = make(map[string]bool)
+	banned.Versions = make(map[string]bool)
 	for rows.Next() {
 		var version sql.NullString
 		var model sql.NullString
@@ -180,4 +182,32 @@ func (c *postgresClient) GetBanned() (*Banned, error) {
 		return nil, err
 	}
 	return &banned, nil
+}
+
+func (b *Banned) Update(client *postgresClient) error {
+	rows, err := client.db.Query(`SELECT version, model FROM banned`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var version sql.NullString
+		var model sql.NullString
+		err := rows.Scan(&version, &model)
+		if err != nil {
+			return err
+		}
+		if version.Valid {
+			b.Versions[version.String] = true
+		}
+		if model.Valid {
+			b.Models[model.String] = true
+		}
+	}
+	err = rows.Err()
+	if err != nil {
+		return err
+	}
+	return nil
+
 }

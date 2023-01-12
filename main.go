@@ -45,26 +45,48 @@ func (c *Config) Load() {
 }
 
 func main() {
+	logger := httplog.NewLogger("stats", httplog.Options{JSON: true})
 	var config Config
 	config.Load()
 
 	client, err := db.NewPostgresClient(config.DatabaseUrl)
 	if err != nil {
-		panic(err)
+		logger.Panic().Err(err).Msg("Failed to get database client")
 	}
 	defer client.Close()
 
 	// TODO(zif): refresh this on a timer
-	banned, err := client.GetBanned()
-	if err != nil {
-		panic(err)
-	}
+	banned := db.NewBanned()
+	go func() {
+		err := banned.Update(client)
+		if err != nil {
+			logger.Panic().Err(err).Msg("failed to update banned list at startup")
+		}
+		for range time.Tick(time.Minute * 1) {
+			err := banned.Update(client)
+			if err != nil {
+				logger.Error().Err(err).Msg("failed to update banned list")
+			}
+		}
+	}()
 
-	//TODO(zif): purge older than 90d on a timer
+	// purge older than 90d on a timer
+	go func() {
+		err := client.DropOld()
+		if err != nil {
+			logger.Panic().Err(err).Msg("Failed to drop old stats at startup")
+		}
+		for range time.Tick(time.Hour * 6) {
+			err := client.DropOld()
+			if err != nil {
+				logger.Warn().Err(err).Msg("Failed to drop old stats")
+			}
+		}
+	}()
 
 	rawTmpl, err := ioutil.ReadFile(config.TemplatePath)
 	if err != nil {
-		panic(err)
+		logger.Panic().Err(err).Msg("Failed to load template from file")
 	}
 	funcMap := template.FuncMap{
 		"ToLower": strings.ToLower,
@@ -73,10 +95,8 @@ func main() {
 	}
 	tmpl, err := template.New("stats").Funcs(funcMap).Parse(string(rawTmpl))
 	if err != nil {
-		panic(err)
+		logger.Panic().Err(err).Msg("Failed to parse template")
 	}
-
-	logger := httplog.NewLogger("stats", httplog.Options{JSON: true})
 
 	r := chi.NewRouter()
 	r.Use(middleware.Timeout(60 * time.Second))
