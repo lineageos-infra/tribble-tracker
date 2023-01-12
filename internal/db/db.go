@@ -145,7 +145,7 @@ func (c *postgresClient) GetCount(column string, filterable string) (int, error)
 
 }
 func (c *postgresClient) DropOld() error {
-	stmt, err := c.db.Prepare(`DROP FROM stats WHERE submit < $1`)
+	stmt, err := c.db.Prepare(`DELETE FROM stats WHERE submit < $1`)
 	if err != nil {
 		return err
 	}
