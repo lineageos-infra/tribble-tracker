@@ -126,6 +126,14 @@ func main() {
 				w.WriteHeader(200)
 			}
 
+			// version _must_ end with model
+			if strings.HasSuffix(stat.Version, stat.Name) {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("version string must end with -model"))
+				return
+			}
+
 			err = client.InsertStatistic(stat)
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
