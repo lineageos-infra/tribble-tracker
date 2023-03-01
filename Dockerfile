@@ -3,7 +3,7 @@ FROM golang:1.19 as builder
 COPY . /app
 WORKDIR /app
 
-RUN go build -o tribble .
+RUN go build -buildvcs=false -o tribble .
 
 FROM busybox
 
