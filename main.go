@@ -104,7 +104,7 @@ func main() {
 	r.Route("/api/v1/stats", func(r chi.Router) {
 		r.Use(middleware.AllowContentEncoding("application/json"))
 		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-			defer r.Body.close()
+			defer r.Body.Close()
 			stat := db.Statistic{}
 			err := json.NewDecoder(r.Body).Decode(&stat)
 			if err != nil {
