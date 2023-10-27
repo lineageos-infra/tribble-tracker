@@ -28,3 +28,13 @@ Limitations
 * Devices without sim cards do not report their country, carrier, or carrier ID.
 
 All stats are displayed, you'll want to drop old data if that's a thing you care about. We keep 90 days. Only the last checkin for each device is kept.
+
+
+Development
+=======================
+
+Install [asdf](https://github.com/asdf-vm/asdf)
+Run:
+```bash
+asdf plugin add golang
+asdf install```
