@@ -15,7 +15,6 @@ kill_timeout = "5s"
   internal_port = 8080
   force_https = true
   auto_start_machines = true
-  auto_stop_machines = true
   min_machines_running = 1
   [http_services.concurrency]
     type = "requests"
