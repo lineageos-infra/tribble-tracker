@@ -37,4 +37,5 @@ Install [asdf](https://github.com/asdf-vm/asdf)
 Run:
 ```bash
 asdf plugin add golang
-asdf install```
+asdf install
+```
