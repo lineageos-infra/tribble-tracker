@@ -30,9 +30,9 @@ func (c *postgresClient) Close() {
 func (c *postgresClient) InsertStatistic(stat Statistic) error {
 	stmt, err := c.db.Prepare(`
 	INSERT INTO stats(device_id, model, version_raw, country, carrier, carrier_id) 
-		VALUES ($1, $2, $3, $4, $5, $6)
+		VALUES ($1, $2, $3, upper($4), $5, $6)
 		ON CONFLICT (device_id) DO UPDATE
-		SET model=$2, version_raw=$3, country=$4, carrier = $5, carrier_id = $6, submit_time=now();
+		SET model=$2, version_raw=$3, country=upper($4), carrier = $5, carrier_id = $6, submit_time=now();
 	`)
 
 	if err != nil {
