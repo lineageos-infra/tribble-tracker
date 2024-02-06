@@ -135,6 +135,9 @@ func main() {
 				return
 			}
 
+			if stat.Country != "Unknown" {
+				stat.Country = strings.ToUpper(stat.Country)
+			}
 			err = client.InsertStatistic(stat)
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
