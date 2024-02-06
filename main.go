@@ -135,6 +135,13 @@ func main() {
 				return
 			}
 
+			if len(stat.Country) != 2 {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("country must be a two letter iso code"))
+				return
+			}
+
 			if stat.Country != "Unknown" {
 				stat.Country = strings.ToUpper(stat.Country)
 			}
