@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -39,7 +40,7 @@ func (c *postgresClient) InsertStatistic(stat Statistic) error {
 		return err
 	}
 
-	_, err = stmt.Exec(stat.Hash, stat.Name, stat.Version, stat.Country, stat.Carrier, stat.CarrierId)
+	_, err = stmt.Exec(stat.Hash, stat.Name, stat.Version, strings.ToUpper(stat.Country), stat.Carrier, stat.CarrierId)
 	if err != nil {
 		return err
 	}
