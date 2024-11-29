@@ -103,6 +103,7 @@ func main() {
 	}
 
 	r := chi.NewRouter()
+	r.Use(middleware.RealIP)
 	r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(httplog.RequestLogger(logger))
 	r.Route("/api/v1/stats", func(r chi.Router) {
