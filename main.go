@@ -15,6 +15,9 @@ import (
 	"github.com/go-chi/httplog"
 	_ "github.com/lib/pq"
 	"github.com/lineageos-infra/tribble-tracker/internal/db"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/number"
 )
 
 type Config struct {
@@ -29,7 +32,7 @@ type TemplateData struct {
 	LeftName  string
 	RightName string
 	Thing     string
-	Total     int
+	Total     string
 }
 
 func (c *Config) Load() {
@@ -46,6 +49,7 @@ func (c *Config) Load() {
 
 func main() {
 	logger := httplog.NewLogger("stats", httplog.Options{JSON: true})
+	printer := message.NewPrinter(language.English)
 	var config Config
 	config.Load()
 
@@ -267,7 +271,7 @@ func main() {
 			w.Write([]byte("failed to read from database"))
 			return
 		}
-		data.Total = total
+		data.Total = printer.Sprintf("%v", number.Decimal(total, number.Precision(3)))
 		err = tmpl.Execute(w, data)
 		if err != nil {
 			log := httplog.LogEntry(r.Context())
@@ -347,7 +351,7 @@ func main() {
 			w.Write([]byte("failed to read from database"))
 			return
 		}
-		data.Total = total
+		data.Total = printer.Sprintf("%v", number.Decimal(total, number.Precision(3)))
 		switch thing {
 		case "model":
 			data.Thing = name
