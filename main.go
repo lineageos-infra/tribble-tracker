@@ -4,24 +4,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httplog"
-	_ "github.com/lib/pq"
 	"github.com/lineageos-infra/tribble-tracker/internal/db"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/number"
 )
 
+var versionRegex = regexp.MustCompile(`^\d\d\.\d`)
+var officialRegex = regexp.MustCompile(`\d\d\.\d-\d{8}-NIGHTLY-.*`)
+
 type Config struct {
-	DatabaseUrl  string
+	DatabasePath string
 	TemplatePath string
 	StaticPath   string
 }
@@ -36,7 +38,10 @@ type TemplateData struct {
 }
 
 func (c *Config) Load() {
-	c.DatabaseUrl = os.Getenv("DATABASE_URL")
+	c.DatabasePath = os.Getenv("DATABASE_PATH")
+	if c.DatabasePath == "" {
+		c.DatabasePath = "dev.db"
+	}
 	c.TemplatePath = os.Getenv("TEMPLATE_PATH")
 	if c.TemplatePath == "" {
 		c.TemplatePath = "templates/index.html"
@@ -53,7 +58,7 @@ func main() {
 	var config Config
 	config.Load()
 
-	client, err := db.NewPostgresClient(config.DatabaseUrl)
+	client, err := db.NewSqlite3Client(config.DatabasePath)
 	if err != nil {
 		logger.Panic().Err(err).Msg("Failed to get database client")
 	}
@@ -88,7 +93,7 @@ func main() {
 		}
 	}()
 
-	rawTmpl, err := ioutil.ReadFile(config.TemplatePath)
+	rawTmpl, err := os.ReadFile(config.TemplatePath)
 	if err != nil {
 		logger.Panic().Err(err).Msg("Failed to load template from file")
 	}
@@ -147,10 +152,21 @@ func main() {
 				return
 			}
 
+			// parse version code
+			version := versionRegex.FindString(stat.Version)
+			if version == "" {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("version must start with version code (ie, 22.1)"))
+				return
+			}
+
+			official := officialRegex.MatchString(stat.Version)
+
 			if stat.Country != "Unknown" {
 				stat.Country = strings.ToUpper(stat.Country)
 			}
-			err = client.InsertStatistic(stat)
+			err = client.InsertStatistic(stat, version, official)
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
 				log.Error().Err(err).Msg("failed to insert statistic")

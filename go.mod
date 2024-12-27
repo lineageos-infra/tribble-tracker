@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/httplog v0.2.5
-	github.com/lib/pq v1.10.7
+	github.com/mattn/go-sqlite3 v1.14.24
 	golang.org/x/text v0.14.0
 )
 

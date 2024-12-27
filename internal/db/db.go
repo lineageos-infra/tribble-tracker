@@ -3,43 +3,66 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-type postgresClient struct {
+type sqlite3Client struct {
 	db *sql.DB
 }
 
-func NewPostgresClient(DatabaseUrl string) (*postgresClient, error) {
-	db, err := sql.Open("postgres", DatabaseUrl)
+func NewSqlite3Client(DatabasePath string) (*sqlite3Client, error) {
+	db, err := sql.Open("sqlite3", DatabasePath)
 	if err != nil {
 		return nil, err
 	}
-
-	client := &postgresClient{db: db}
+	client := &sqlite3Client{db: db}
+	err = client.CreateIfNotExists()
+	if err != nil {
+		fmt.Printf("Failed to create tables/indexes: %s", err)
+	}
 	return client, nil
-
 }
 
-func (c *postgresClient) Close() {
+func (c *sqlite3Client) Close() {
 	c.db.Close()
 }
 
-func (c *postgresClient) InsertStatistic(stat Statistic) error {
+func (c *sqlite3Client) CreateIfNotExists() error {
+	file, err := os.ReadFile("schema.sql")
+	if err != nil {
+		return err
+	}
+	statements := strings.Split(string(file), ";")
+	for _, statement := range statements {
+		if statement == "" {
+			continue
+		}
+		fmt.Printf("Running statement %s\n", statement)
+		_, err := c.db.Exec(statement)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *sqlite3Client) InsertStatistic(stat Statistic, version string, official bool) error {
 	stmt, err := c.db.Prepare(`
-	INSERT INTO stats(device_id, model, version_raw, country, carrier, carrier_id) 
-		VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO stats(device_id, model, version_raw, country, carrier, carrier_id, version, official) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (device_id) DO UPDATE
-		SET model=$2, version_raw=$3, country=$4, carrier = $5, carrier_id = $6, submit_time=now();
+		SET model=$2, version_raw=$3, country=$4, carrier = $5, carrier_id = $6, submit_time=current_timestamp, version=$7, official=$8;
 	`)
 
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(stat.Hash, stat.Name, stat.Version, stat.Country, stat.Carrier, stat.CarrierId)
+	_, err = stmt.Exec(stat.Hash, stat.Name, stat.Version, stat.Country, stat.Carrier, stat.CarrierId, version, official)
 	if err != nil {
 		return err
 	}
@@ -47,7 +70,7 @@ func (c *postgresClient) InsertStatistic(stat Statistic) error {
 	return nil
 }
 
-func (c *postgresClient) GetMostPopular(field string, column string, filterable string) ([]Stat, error) {
+func (c *sqlite3Client) GetMostPopular(field string, column string, filterable string) ([]Stat, error) {
 	whitelist := map[string]interface{}{
 		"version": nil,
 		"model":   nil,
@@ -61,7 +84,7 @@ func (c *postgresClient) GetMostPopular(field string, column string, filterable 
 	var rows *sql.Rows
 	if column == "" {
 		stmt, err := c.db.Prepare(fmt.Sprintf(`
-			SELECT %s, count(%s) FROM stats
+			SELECT %s, COUNT(%s) as count FROM stats
 			GROUP BY %s
 			ORDER BY count DESC
 			LIMIT 250
@@ -81,7 +104,7 @@ func (c *postgresClient) GetMostPopular(field string, column string, filterable 
 		}
 
 		stmt, err := c.db.Prepare(fmt.Sprintf(`
-			SELECT %s, count(%s) FROM stats
+			SELECT %s, count(%s) as count FROM stats
 			WHERE %s = $1
 			GROUP BY %s
 			ORDER BY count DESC
@@ -112,7 +135,7 @@ func (c *postgresClient) GetMostPopular(field string, column string, filterable 
 	}
 	return result, nil
 }
-func (c *postgresClient) GetCount(column string, filterable string) (int, error) {
+func (c *sqlite3Client) GetCount(column string, filterable string) (int, error) {
 	whitelist := map[string]interface{}{
 		"version": nil,
 		"model":   nil,
@@ -144,7 +167,7 @@ func (c *postgresClient) GetCount(column string, filterable string) (int, error)
 	return count, nil
 
 }
-func (c *postgresClient) DropOld() error {
+func (c *sqlite3Client) DropOld() error {
 	stmt, err := c.db.Prepare(`DELETE FROM stats WHERE submit_time < $1`)
 	if err != nil {
 		return err
@@ -154,7 +177,7 @@ func (c *postgresClient) DropOld() error {
 
 }
 
-func (c *postgresClient) GetBanned() (*Banned, error) {
+func (c *sqlite3Client) GetBanned() (*Banned, error) {
 	rows, err := c.db.Query(`SELECT version, model FROM banned`)
 	if err != nil {
 		return nil, err
@@ -184,7 +207,7 @@ func (c *postgresClient) GetBanned() (*Banned, error) {
 	return &banned, nil
 }
 
-func (b *Banned) Update(client *postgresClient) error {
+func (b *Banned) Update(client *sqlite3Client) error {
 	rows, err := client.db.Query(`SELECT version, model FROM banned`)
 	if err != nil {
 		return err
