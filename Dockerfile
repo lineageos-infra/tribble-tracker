@@ -10,5 +10,6 @@ FROM busybox
 COPY static /static
 COPY templates /templates
 COPY --from=builder /app/tribble /
+COPY schema.sql /
 
 CMD ["/tribble"]

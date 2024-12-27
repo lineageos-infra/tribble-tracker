@@ -20,3 +20,7 @@ kill_timeout = "5s"
     type = "requests"
     soft_limit = 200
     hard_limit = 450
+
+[mounts]
+source = "statsdb"
+destination = "/data"
