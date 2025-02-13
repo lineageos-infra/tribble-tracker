@@ -15,7 +15,7 @@ type sqlite3Client struct {
 }
 
 func NewSqlite3Client(DatabasePath string) (*sqlite3Client, error) {
-	db, err := sql.Open("sqlite3", DatabasePath)
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_journal_mode=WAL", DatabasePath))
 	if err != nil {
 		return nil, err
 	}
