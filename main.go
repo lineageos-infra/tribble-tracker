@@ -289,7 +289,6 @@ func main() {
 			return
 		}
 		data.Total = printer.Sprintf("%v", number.Decimal(total, number.Precision(3)))
-		w.Header().Add("Cache-Control", "max-age=60")
 		err = tmpl.Execute(w, data)
 		if err != nil {
 			log := httplog.LogEntry(r.Context())
@@ -388,7 +387,6 @@ func main() {
 				data.Thing = name
 			}
 		}
-		w.Header().Add("Cache-Control", "max-age=60")
 		err = tmpl.Execute(w, data)
 		if err != nil {
 			log := httplog.LogEntry(r.Context())
