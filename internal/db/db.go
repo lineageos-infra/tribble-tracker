@@ -84,11 +84,11 @@ func (c *sqlite3Client) GetMostPopular(field string, column string, filterable s
 	var rows *sql.Rows
 	if column == "" {
 		stmt, err := c.db.Prepare(fmt.Sprintf(`
-			SELECT %s, COUNT(%s) as count FROM stats
+			SELECT %s, COUNT(*) as count FROM stats
 			GROUP BY %s
 			ORDER BY count DESC
 			LIMIT 250
-			`, field, field, field))
+			`, field, field))
 		if err != nil {
 			return nil, err
 		}
@@ -104,12 +104,12 @@ func (c *sqlite3Client) GetMostPopular(field string, column string, filterable s
 		}
 
 		stmt, err := c.db.Prepare(fmt.Sprintf(`
-			SELECT %s, count(%s) as count FROM stats
+			SELECT %s, count(*) as count FROM stats
 			WHERE %s = $1
 			GROUP BY %s
 			ORDER BY count DESC
 			LIMIT 250
-		`, field, field, column, field))
+		`, field, column, field))
 		if err != nil {
 			return nil, err
 		}
