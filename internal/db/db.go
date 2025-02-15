@@ -145,13 +145,13 @@ func (c *sqlite3Client) GetCount(column string, filterable string) (int, error) 
 
 	var row *sql.Row
 	if column == "" {
-		row = c.db.QueryRow(`SELECT count(device_id) FROM stats`)
+		row = c.db.QueryRow(`SELECT count(*) FROM stats`)
 	} else {
 		if _, ok := whitelist[column]; !ok {
 			// column wasn't valid, reject
 			return 0, fmt.Errorf("invalid column: %s", column)
 		}
-		stmt, err := c.db.Prepare(fmt.Sprintf(`SELECT count(device_id) FROM stats WHERE %s = $1`, column))
+		stmt, err := c.db.Prepare(fmt.Sprintf(`SELECT count(*) FROM stats WHERE %s = $1`, column))
 		if err != nil {
 			return 0, err
 		}
