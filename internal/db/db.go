@@ -3,14 +3,17 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+    "github.com/TwiN/gocache/v2"
 )
 
 type sqlite3Client struct {
+	cache *gocache.Cache
 	db *sql.DB
 }
 
@@ -19,7 +22,9 @@ func NewSqlite3Client(DatabasePath string) (*sqlite3Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := &sqlite3Client{db: db}
+	cache := gocache.NewCache().WithMaxSize(1000)
+	cache.StartJanitor()
+	client := &sqlite3Client{cache: cache, db: db}
 	err = client.CreateIfNotExists()
 	if err != nil {
 		fmt.Printf("Failed to create tables/indexes: %s", err)
@@ -28,6 +33,7 @@ func NewSqlite3Client(DatabasePath string) (*sqlite3Client, error) {
 }
 
 func (c *sqlite3Client) Close() {
+	c.cache.StopJanitor()
 	c.db.Close()
 }
 
@@ -48,6 +54,14 @@ func (c *sqlite3Client) CreateIfNotExists() error {
 		}
 	}
 	return nil
+}
+
+func (c *sqlite3Client) cacheKey(args ...string) string {
+	hash := fnv.New64a()
+	for _, arg := range args {
+		hash.Write([]byte(arg))
+	}
+	return fmt.Sprint(hash.Sum64())
 }
 
 func (c *sqlite3Client) InsertStatistic(stat Statistic, version string, official bool) error {
@@ -81,6 +95,13 @@ func (c *sqlite3Client) GetMostPopular(field string, column string, filterable s
 		// field wasn't valid, reject
 		return nil, fmt.Errorf("invalid field: %s", field)
 	}
+
+	cacheKey := c.cacheKey(field, column, filterable)
+	value, exists := c.cache.Get(cacheKey)
+	if exists {
+		return value.([]Stat), nil
+	}
+
 	var rows *sql.Rows
 	if column == "" {
 		stmt, err := c.db.Prepare(fmt.Sprintf(`
@@ -133,6 +154,7 @@ func (c *sqlite3Client) GetMostPopular(field string, column string, filterable s
 	if err != nil {
 		return nil, err
 	}
+	c.cache.SetWithTTL(cacheKey, result, 6 * time.Hour)
 	return result, nil
 }
 func (c *sqlite3Client) GetCount(column string, filterable string) (int, error) {
