@@ -9,7 +9,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-    "github.com/TwiN/gocache/v2"
+	"github.com/TwiN/gocache/v2"
 )
 
 type sqlite3Client struct {
