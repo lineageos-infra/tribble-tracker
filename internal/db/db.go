@@ -96,7 +96,7 @@ func (c *sqlite3Client) GetMostPopular(field string, column string, filterable s
 		return nil, fmt.Errorf("invalid field: %s", field)
 	}
 
-	cacheKey := c.cacheKey(field, column, filterable)
+	cacheKey := c.cacheKey("GetMostPopular", field, column, filterable)
 	value, exists := c.cache.Get(cacheKey)
 	if exists {
 		return value.([]Stat), nil
