@@ -165,6 +165,12 @@ func (c *sqlite3Client) GetCount(column string, filterable string) (int, error) 
 		"carrier": nil,
 	}
 
+	cacheKey := c.cacheKey("GetCount", column, filterable)
+	value, exists := c.cache.Get(cacheKey)
+	if exists {
+		return value.(int), nil
+	}
+
 	var row *sql.Row
 	if column == "" {
 		row = c.db.QueryRow(`SELECT count(*) FROM stats`)
@@ -186,6 +192,7 @@ func (c *sqlite3Client) GetCount(column string, filterable string) (int, error) 
 
 	var count int
 	row.Scan(&count)
+	c.cache.SetWithTTL(cacheKey, count, 6 * time.Hour)
 	return count, nil
 
 }
