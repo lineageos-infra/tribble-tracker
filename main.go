@@ -129,12 +129,14 @@ func main() {
 				// version is banned, return neat
 				w.Write([]byte("neat"))
 				w.WriteHeader(200)
+				return
 			}
 
 			if _, found := banned.Models[stat.Name]; found {
 				// model is banned, return neat
 				w.Write([]byte("neat"))
 				w.WriteHeader(200)
+				return
 			}
 
 			// version _must_ contain  model
