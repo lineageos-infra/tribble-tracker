@@ -236,6 +236,34 @@ func (c *sqlite3Client) GetBanned() (*Banned, error) {
 	return &banned, nil
 }
 
+func (c *sqlite3Client) BanModel(value string, note string) error {
+	stmt, err := c.db.Prepare(`
+	INSERT INTO banned(model, note)
+		VALUES ($1, $2)
+		ON CONFLICT (model) DO UPDATE
+		SET note=$2;
+	`)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(value, note)
+	return err
+}
+
+func (c *sqlite3Client) BanVersion(value string, note string) error {
+	stmt, err := c.db.Prepare(`
+	INSERT INTO banned(version, note)
+		VALUES ($1, $2)
+		ON CONFLICT (version) DO UPDATE
+		SET note=$2;
+	`)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(value, note)
+	return err
+}
+
 func (b *Banned) Update(client *sqlite3Client) error {
 	rows, err := client.db.Query(`SELECT version, model FROM banned`)
 	if err != nil {

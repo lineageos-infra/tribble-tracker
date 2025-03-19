@@ -23,3 +23,6 @@ CREATE TABLE IF NOT EXISTS banned (
     model TEXT,
     note TEXT
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS banned_version ON banned(version);
+CREATE UNIQUE INDEX IF NOT EXISTS banned_model ON banned(model);

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
@@ -244,6 +245,72 @@ func main() {
 
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(resp)
+		})
+
+		r.Post("/ban/model", func(w http.ResponseWriter, r *http.Request) {
+			host, _, _ := net.SplitHostPort(r.RemoteAddr)
+			if host != "127.0.0.1" && host != "::1" {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			data := struct {
+				Model string `json:"model"`
+				Note  string `json:"note"`
+			}{}
+			err := json.NewDecoder(r.Body).Decode(&data)
+			if err != nil || len(data.Model) == 0 {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			err = client.BanModel(data.Model, data.Note)
+			if err != nil {
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to write to the database")
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("failed to write to the database"))
+				return
+			}
+			w.Header().Set("Content-Type", "text/plain")
+			w.Write([]byte("OK"))
+		})
+
+		r.Post("/ban/version", func(w http.ResponseWriter, r *http.Request) {
+			host, _, _ := net.SplitHostPort(r.RemoteAddr)
+			if host != "127.0.0.1" && host != "::1" {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			data := struct {
+				Version string `json:"version"`
+				Note    string `json:"note"`
+			}{}
+			err := json.NewDecoder(r.Body).Decode(&data)
+			if err != nil || len(data.Version) == 0 {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			err = client.BanVersion(data.Version, data.Note)
+			if err != nil {
+				log := httplog.LogEntry(r.Context())
+				log.Error().Err(err).Msg("failed to write to the database")
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Add("Content-Type", "text/plain")
+				w.Write([]byte("failed to write to the database"))
+				return
+			}
+			w.Header().Set("Content-Type", "text/plain")
+			w.Write([]byte("OK"))
+		})
+
+		r.Get("/ban/list", func(w http.ResponseWriter, r *http.Request) {
+			host, _, _ := net.SplitHostPort(r.RemoteAddr)
+			if host != "127.0.0.1" && host != "::1" {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(banned)
 		})
 	})
 	r.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {

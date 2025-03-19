@@ -7,7 +7,7 @@ RUN go build -buildvcs=false -o tribble .
 
 FROM ubuntu:24.04
 
-RUN apt-get update && apt-get install -y sqlite3
+RUN apt-get update && apt-get install -y curl sqlite3
 
 COPY static /static
 COPY templates /templates
