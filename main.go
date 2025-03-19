@@ -126,6 +126,8 @@ func main() {
 				return
 			}
 
+			stat.Normalize()
+
 			if _, found := banned.Versions[stat.Version]; found {
 				// version is banned, return neat
 				w.Write([]byte("neat"))

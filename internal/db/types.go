@@ -14,6 +14,13 @@ type Statistic struct {
 	Carrier   string `json:"device_carrier"`
 	CarrierId string `json:"device_carrier_id"`
 }
+
+func (*stat Statistic) Normalize() {
+    if len(country) == 2 {
+        stat.Country = strings.ToUpper(stat.Country)
+    }
+}
+
 type Stat struct {
 	Item  string
 	Count int
