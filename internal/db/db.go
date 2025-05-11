@@ -17,13 +17,16 @@ type sqlite3Client struct {
 	db *sql.DB
 }
 
-func NewSqlite3Client(DatabasePath string) (*sqlite3Client, error) {
-	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_journal_mode=WAL", DatabasePath))
+func NewSqlite3Client(DatabasePath string, Mode string) (*sqlite3Client, error) {
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=%s&_journal_mode=WAL", DatabasePath, Mode))
 	if err != nil {
 		return nil, err
 	}
 	cache := gocache.NewCache().WithMaxSize(1000)
 	cache.StartJanitor()
+	if Mode == "rw" {
+		db.SetMaxOpenConns(1)
+	}
 	client := &sqlite3Client{cache: cache, db: db}
 	err = client.CreateIfNotExists()
 	if err != nil {

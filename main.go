@@ -55,21 +55,27 @@ func main() {
 	var config Config
 	config.Load()
 
-	client, err := db.NewSqlite3Client(config.DatabasePath)
+	client, err := db.NewSqlite3Client(config.DatabasePath, "rw")
 	if err != nil {
-		logger.Panic().Err(err).Msg("Failed to get database client")
+		logger.Panic().Err(err).Msg("Failed to get rw database client")
 	}
 	defer client.Close()
+
+	clientRo, err := db.NewSqlite3Client(config.DatabasePath, "ro")
+	if err != nil {
+		logger.Panic().Err(err).Msg("Failed to get ro database client")
+	}
+	defer clientRo.Close()
 
 	// TODO(zif): refresh this on a timer
 	banned := db.NewBanned()
 	go func() {
-		err := banned.Update(client)
+		err := banned.Update(clientRo)
 		if err != nil {
 			logger.Panic().Err(err).Msg("failed to update banned list at startup")
 		}
 		for range time.Tick(time.Minute * 1) {
-			err := banned.Update(client)
+			err := banned.Update(clientRo)
 			if err != nil {
 				logger.Error().Err(err).Msg("failed to update banned list")
 			}
@@ -191,7 +197,7 @@ func main() {
 				Total:   0,
 			}
 
-			model, err := client.GetMostPopular("model", "", "")
+			model, err := clientRo.GetMostPopular("model", "", "")
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
 				log.Error().Err(err).Msg("failed to read database")
@@ -200,7 +206,7 @@ func main() {
 				w.Write([]byte("failed to read from database"))
 				return
 			}
-			country, err := client.GetMostPopular("country", "", "")
+			country, err := clientRo.GetMostPopular("country", "", "")
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
 				log.Error().Err(err).Msg("failed to read database")
@@ -209,7 +215,7 @@ func main() {
 				w.Write([]byte("failed to read from database"))
 				return
 			}
-			version, err := client.GetMostPopular("version", "", "")
+			version, err := clientRo.GetMostPopular("version", "", "")
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
 				log.Error().Err(err).Msg("failed to read database")
@@ -218,7 +224,7 @@ func main() {
 				w.Write([]byte("failed to read from database"))
 				return
 			}
-			total, err := client.GetCount("", "")
+			total, err := clientRo.GetCount("", "")
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
 				log.Error().Err(err).Msg("failed to read database")
@@ -324,7 +330,7 @@ func main() {
 			RightName: "Country",
 			Thing:     "active",
 		}
-		left, err := client.GetMostPopular("model", "", "")
+		left, err := clientRo.GetMostPopular("model", "", "")
 		if err != nil {
 			log := httplog.LogEntry(r.Context())
 			log.Error().Err(err).Msg("failed to read database")
@@ -334,7 +340,7 @@ func main() {
 			return
 		}
 		data.Left = left
-		right, err := client.GetMostPopular("country", "", "")
+		right, err := clientRo.GetMostPopular("country", "", "")
 		if err != nil {
 			log := httplog.LogEntry(r.Context())
 			log.Error().Err(err).Msg("failed to read database")
@@ -344,7 +350,7 @@ func main() {
 			return
 		}
 		data.Right = right
-		total, err := client.GetCount("", "")
+		total, err := clientRo.GetCount("", "")
 		if err != nil {
 			log := httplog.LogEntry(r.Context())
 			log.Error().Err(err).Msg("failed to read database")
@@ -375,7 +381,7 @@ func main() {
 		// do Left
 		if thing == "model" {
 			data.LeftName = "Version"
-			left, err := client.GetMostPopular("version", thing, name)
+			left, err := clientRo.GetMostPopular("version", thing, name)
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
 				log.Error().Err(err).Msg("failed to read database")
@@ -387,7 +393,7 @@ func main() {
 			data.Left = left
 		} else {
 			data.LeftName = "Model"
-			left, err := client.GetMostPopular("model", thing, name)
+			left, err := clientRo.GetMostPopular("model", thing, name)
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
 				log.Error().Err(err).Msg("failed to read database")
@@ -400,7 +406,7 @@ func main() {
 		}
 		if thing == "country" {
 			data.RightName = "Carrier"
-			right, err := client.GetMostPopular("carrier", thing, name)
+			right, err := clientRo.GetMostPopular("carrier", thing, name)
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
 				log.Error().Err(err).Msg("failed to read database")
@@ -412,7 +418,7 @@ func main() {
 			data.Right = right
 		} else {
 			data.RightName = "Country"
-			right, err := client.GetMostPopular("country", thing, name)
+			right, err := clientRo.GetMostPopular("country", thing, name)
 			if err != nil {
 				log := httplog.LogEntry(r.Context())
 				log.Error().Err(err).Msg("failed to read database")
@@ -424,7 +430,7 @@ func main() {
 			data.Right = right
 		}
 
-		total, err := client.GetCount(thing, name)
+		total, err := clientRo.GetCount(thing, name)
 		if err != nil {
 			log := httplog.LogEntry(r.Context())
 			log.Error().Err(err).Msg("failed to read database")
