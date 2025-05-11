@@ -51,7 +51,7 @@ func (c *Config) Load() {
 }
 
 func main() {
-	logger := httplog.NewLogger("stats", httplog.Options{JSON: true})
+	logger := httplog.NewLogger("stats", httplog.Options{LogLevel: "warn", JSON: true})
 	var config Config
 	config.Load()
 
