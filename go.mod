@@ -9,7 +9,6 @@ require (
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-chi/httplog v0.3.2
 	github.com/mattn/go-sqlite3 v1.14.24
-	golang.org/x/text v0.22.0
 )
 
 require (

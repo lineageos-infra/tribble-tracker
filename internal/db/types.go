@@ -1,11 +1,5 @@
 package db
 
-import (
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/number"
-)
-
 type Statistic struct {
 	Hash      string `json:"device_hash"`
 	Name      string `json:"device_name"`
@@ -17,11 +11,6 @@ type Statistic struct {
 type Stat struct {
 	Item  string
 	Count int
-}
-
-func (s *Stat) PrettyCount() string {
-	printer := message.NewPrinter(language.English)
-	return printer.Sprintf("%v", number.Decimal(s.Count, number.Precision(1)))
 }
 
 type Banned struct {

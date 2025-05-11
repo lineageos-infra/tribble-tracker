@@ -15,9 +15,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httplog"
 	"github.com/lineageos-infra/tribble-tracker/internal/db"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/number"
 )
 
 var versionRegex = regexp.MustCompile(`^\d\d\.\d`)
@@ -35,7 +32,7 @@ type TemplateData struct {
 	LeftName  string
 	RightName string
 	Thing     string
-	Total     string
+	Total     int
 }
 
 func (c *Config) Load() {
@@ -55,7 +52,6 @@ func (c *Config) Load() {
 
 func main() {
 	logger := httplog.NewLogger("stats", httplog.Options{JSON: true})
-	printer := message.NewPrinter(language.English)
 	var config Config
 	config.Load()
 
@@ -357,7 +353,7 @@ func main() {
 			w.Write([]byte("failed to read from database"))
 			return
 		}
-		data.Total = printer.Sprintf("%v", number.Decimal(total, number.Precision(3)))
+		data.Total = total
 		err = tmpl.Execute(w, data)
 		if err != nil {
 			log := httplog.LogEntry(r.Context())
@@ -437,7 +433,7 @@ func main() {
 			w.Write([]byte("failed to read from database"))
 			return
 		}
-		data.Total = printer.Sprintf("%v", number.Decimal(total, number.Precision(3)))
+		data.Total = total
 		switch thing {
 		case "model":
 			data.Thing = name
