@@ -6,7 +6,7 @@ toolchain go1.24.2
 
 require (
 	github.com/TwiN/gocache/v2 v2.2.2
-	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-chi/httplog v0.3.2
 	github.com/mattn/go-sqlite3 v1.14.28
 )
