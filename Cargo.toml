@@ -1,0 +1,12 @@
+[package]
+name = "tribble-tracker-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8.9"
+tokio = { version = "1.52.3", features = ["full"] }
+toasty = { version = "0.6.1", features = ["sqlite", "jiff"] }
+jiff = "0.2.24"
+serde = { version = "1.0.228", features = ["derive"] }
+regex = "1.11"
