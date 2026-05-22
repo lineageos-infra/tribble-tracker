@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 axum = "0.8.9"
 tokio = { version = "1.52.3", features = ["full"] }
-toasty = { version = "0.6.1", features = ["sqlite", "jiff"] }
-jiff = "0.2.24"
 serde = { version = "1.0.228", features = ["derive"] }
+sqlx = { version = "0.9.0", features = ["runtime-tokio", "sqlite", "macros"] }
 regex = "1.11"
+dotenvy = "0.15.7"

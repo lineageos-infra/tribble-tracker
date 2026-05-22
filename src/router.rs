@@ -1,5 +1,4 @@
 use crate::AppState;
-use crate::models::{Banned, Stat};
 use axum::{
     Json, Router,
     extract::State,
@@ -21,12 +20,12 @@ pub fn api_router() -> Router<AppState> {
 }
 
 enum ApiError {
-    Db(toasty::Error),
+    Db(sqlx::Error),
     BadRequest(&'static str),
 }
 
-impl From<toasty::Error> for ApiError {
-    fn from(e: toasty::Error) -> Self {
+impl From<sqlx::Error> for ApiError {
+    fn from(e: sqlx::Error) -> Self {
         ApiError::Db(e)
     }
 }
@@ -52,44 +51,47 @@ struct StatsResponse {
 }
 
 async fn list_stats(State(state): State<AppState>) -> Result<Json<StatsResponse>, ApiError> {
-    let mut db = state.db.clone();
-    let stats = Stat::all()
-        .select((
-            Stat::fields().model(),
-            Stat::fields().country(),
-            Stat::fields().version(),
-        ))
-        .exec(&mut db)
-        .await?;
+    let models_fut = sqlx::query!(
+        r#"SELECT model AS "model!: String", COUNT(*) AS count
+           FROM stats WHERE model IS NOT NULL
+           GROUP BY model ORDER BY count DESC LIMIT 250"#
+    )
+    .fetch_all(&state.pool);
 
-    let mut model: HashMap<String, usize> = HashMap::new();
-    let mut country: HashMap<String, usize> = HashMap::new();
-    let mut version: HashMap<String, usize> = HashMap::new();
+    let countries_fut = sqlx::query!(
+        r#"SELECT country AS "country!: String", COUNT(*) AS count
+           FROM stats WHERE country IS NOT NULL
+           GROUP BY country ORDER BY count DESC LIMIT 250"#
+    )
+    .fetch_all(&state.pool);
 
-    for s in &stats {
-        if let Some(v) = &s.0 {
-            *model.entry(v.clone()).or_insert(0) += 1;
-        }
-        if let Some(v) = &s.1 {
-            *country.entry(v.clone()).or_insert(0) += 1;
-        }
-        if let Some(v) = &s.2 {
-            *version.entry(v.clone()).or_insert(0) += 1;
-        }
-    }
+    let versions_fut = sqlx::query!(
+        r#"SELECT version AS "version!: String", COUNT(*) AS count
+           FROM stats WHERE version IS NOT NULL
+           GROUP BY version ORDER BY count DESC LIMIT 250"#
+    )
+    .fetch_all(&state.pool);
+
+    let total_fut = sqlx::query_scalar!(r#"SELECT COUNT(*) FROM stats"#).fetch_one(&state.pool);
+
+    let (models, countries, versions, total) =
+        tokio::try_join!(models_fut, countries_fut, versions_fut, total_fut)?;
 
     Ok(Json(StatsResponse {
-        model: top_n(model, 250),
-        country: top_n(country, 250),
-        version: top_n(version, 250),
-        total: stats.len(),
+        model: models
+            .into_iter()
+            .map(|r| (r.model, r.count as usize))
+            .collect(),
+        country: countries
+            .into_iter()
+            .map(|r| (r.country, r.count as usize))
+            .collect(),
+        version: versions
+            .into_iter()
+            .map(|r| (r.version, r.count as usize))
+            .collect(),
+        total: total as usize,
     }))
-}
-
-fn top_n(map: HashMap<String, usize>, n: usize) -> HashMap<String, usize> {
-    let mut v: Vec<_> = map.into_iter().collect();
-    v.sort_by(|a, b| b.1.cmp(&a.1));
-    v.into_iter().take(n).collect()
 }
 
 #[derive(Deserialize)]
@@ -106,22 +108,20 @@ async fn create_stat(
     State(state): State<AppState>,
     Json(mut input): Json<StatInput>,
 ) -> Result<&'static str, ApiError> {
-    let mut db = state.db.clone();
-
-    // banned version?
-    let banned_version = Banned::filter(Banned::fields().version().eq(input.version.clone()))
-        .first()
-        .exec(&mut db)
-        .await?;
+    let banned_version: Option<i64> = sqlx::query_scalar!(
+        "SELECT 1 FROM banned WHERE version = ? LIMIT 1",
+        input.version
+    )
+    .fetch_optional(&state.pool)
+    .await?;
     if banned_version.is_some() {
         return Ok("neat");
     }
 
-    // banned model?
-    let banned_model = Banned::filter(Banned::fields().model().eq(input.name.clone()))
-        .first()
-        .exec(&mut db)
-        .await?;
+    let banned_model: Option<i64> =
+        sqlx::query_scalar!("SELECT 1 FROM banned WHERE model = ? LIMIT 1", input.name)
+            .fetch_optional(&state.pool)
+            .await?;
     if banned_model.is_some() {
         return Ok("neat");
     }
@@ -150,18 +150,19 @@ async fn create_stat(
         input.country = input.country.to_uppercase();
     }
 
-    toasty::create!(Stat {
-        device_id: input.device_id,
-        carrier: input.carrier,
-        carrier_id: input.carrier_id,
-        country: Some(input.country),
-        model: Some(input.name),
-        official: Some(official),
-        submit_time: Some(jiff::Zoned::now().datetime()),
-        version: Some(version),
-        version_raw: Some(input.version),
-    })
-    .exec(&mut db)
+    sqlx::query!(
+        "INSERT INTO stats (device_id, carrier, carrier_id, country, model, official, version, version_raw)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        input.device_id,
+        input.carrier,
+        input.carrier_id,
+        input.country,
+        input.name,
+        official,
+        version,
+        input.version,
+    )
+    .execute(&state.pool)
     .await?;
 
     Ok("neat")
@@ -179,17 +180,13 @@ struct BannedItem {
 }
 
 async fn list_bans(State(state): State<AppState>) -> Result<Json<Vec<BannedItem>>, ApiError> {
-    let mut db = state.db.clone();
-    let banned = Banned::all().exec(&mut db).await?;
-
-    let items = banned
-        .into_iter()
-        .map(|b| BannedItem {
-            version: b.version,
-            model: b.model,
-            note: b.note,
-        })
-        .collect();
+    let items = sqlx::query_as!(
+        BannedItem,
+        r#"SELECT version AS "version!: String", model AS "model!: String", note
+           FROM banned"#
+    )
+    .fetch_all(&state.pool)
+    .await?;
 
     Ok(Json(items))
 }
