@@ -5,16 +5,19 @@
 use axum::Router;
 use std::env;
 use std::net::SocketAddr;
+use std::sync::{Arc, RwLock};
 use tokio::signal;
 use tower_http::services::{ServeDir, ServeFile};
 
 pub mod router;
 use crate::router::api::api_router;
 use crate::router::internal::internal_router;
+pub mod tasks;
 
 #[derive(Clone)]
 pub struct AppState {
     pub pool: sqlx::SqlitePool,
+    pub banned: tasks::BannedCache,
 }
 
 #[tokio::main]
@@ -23,7 +26,16 @@ async fn main() -> Result<(), sqlx::Error> {
     let pool = sqlx::SqlitePool::connect(&database_url).await?;
     sqlx::migrate!().run(&pool).await?;
 
-    let state = AppState { pool };
+    let banned_cache: tasks::BannedCache = Arc::new(RwLock::new(tasks::Banned::default()));
+
+    let state = AppState {
+        pool,
+        banned: banned_cache,
+    };
+
+    // Start tasks
+    tasks::spawn_stats_cleanup(state.pool.clone());
+    tasks::spawn_banned_refresh(state.pool.clone(), state.banned.clone());
 
     // Production Path, use vite directly in development
     let client = ServeDir::new("client").fallback(ServeFile::new("client/index.html"));

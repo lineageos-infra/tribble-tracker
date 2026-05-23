@@ -165,22 +165,11 @@ async fn create_stat(
     state: State<AppState>,
     mut input: Json<StatInput>,
 ) -> Result<&'static str, super::RouterError> {
-    let banned_version: Option<i64> = sqlx::query_scalar!(
-        "SELECT 1 FROM banned WHERE version = ? LIMIT 1",
-        input.version
-    )
-    .fetch_optional(&state.pool)
-    .await?;
-    if banned_version.is_some() {
-        return Ok("neat");
-    }
-
-    let banned_model: Option<i64> =
-        sqlx::query_scalar!("SELECT 1 FROM banned WHERE model = ? LIMIT 1", input.name)
-            .fetch_optional(&state.pool)
-            .await?;
-    if banned_model.is_some() {
-        return Ok("neat");
+    {
+        let banned = state.banned.read().unwrap();
+        if banned.versions.contains(&input.version) || banned.models.contains(&input.name) {
+            return Ok("neat");
+        }
     }
 
     if input.name != "x86_64" && !input.version.ends_with(&input.name) {

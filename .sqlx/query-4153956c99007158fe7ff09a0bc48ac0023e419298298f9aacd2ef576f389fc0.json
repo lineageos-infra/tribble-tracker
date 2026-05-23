@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM stats WHERE submit_time < datetime('now', '-90 days')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "4153956c99007158fe7ff09a0bc48ac0023e419298298f9aacd2ef576f389fc0"
+}
