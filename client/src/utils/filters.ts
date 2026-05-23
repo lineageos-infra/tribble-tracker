@@ -11,7 +11,7 @@ export interface ActiveFilter {
   name: string
 }
 
-export function activeFiltersFromRoute(route: RouteLocationNormalizedLoaded): ActiveFilter[] {
+export function filtersFromRoute(route: RouteLocationNormalizedLoaded): ActiveFilter[] {
   return FILTER_COLUMNS
     .map((column) => ({ column, name: route.query[column] }))
     .filter((entry): entry is ActiveFilter => typeof entry.name === 'string' && entry.name.length > 0)
@@ -29,7 +29,7 @@ export function routeForFilterSelection(
   currentRoute: RouteLocationNormalizedLoaded,
   target: ActiveFilter
 ): RouteLocationRaw {
-  const activeFilters = activeFiltersFromRoute(currentRoute)
+  const activeFilters = filtersFromRoute(currentRoute)
   const nextFilters = activeFilters.filter((filter) => filter.column !== target.column)
   nextFilters.push(target)
 
@@ -43,7 +43,7 @@ export function routeForClearingFilter(
   currentRoute: RouteLocationNormalizedLoaded,
   target: ActiveFilter
 ): RouteLocationRaw {
-  const activeFilters = activeFiltersFromRoute(currentRoute)
+  const activeFilters = filtersFromRoute(currentRoute)
   const remaining = activeFilters.filter((filter) => filter.column !== target.column)
   return remaining.length
     ? { name: 'filter', query: queryFromFilters(remaining) }

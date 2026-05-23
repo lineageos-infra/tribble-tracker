@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { FILTER_COLUMNS } from '@/api/types'
 import FilterPage from '@/pages/FilterPage.vue'
 import OverviewPage from '@/pages/OverviewPage.vue'
+import { filtersFromRoute } from '@/utils/filters'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -20,18 +20,7 @@ const router = createRouter({
       name: 'filter',
       component: FilterPage,
       beforeEnter: (to) => {
-        const valid = FILTER_COLUMNS.some(
-          (column) => typeof to.query[column] === 'string' && to.query[column]
-        )
-        if (!valid) return { name: 'overview' }
-      }
-    },
-    {
-      path: '/:column/:name',
-      redirect: (to) => {
-        const column = String(to.params.column)
-        const name = String(to.params.name)
-        return { name: 'filter', query: { [column]: name } }
+        if (!filtersFromRoute(to).length) return { name: 'overview' }
       }
     }
   ]
