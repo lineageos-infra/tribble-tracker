@@ -2,9 +2,9 @@ use axum::Router;
 use std::env;
 use tokio::signal;
 
-use crate::router::api_router;
-use crate::router::internal_router;
-mod router;
+pub mod router;
+use crate::router::api::api_router;
+use crate::router::internal::internal_router;
 
 #[derive(Clone)]
 pub struct AppState {

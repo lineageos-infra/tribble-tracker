@@ -1,9 +1,7 @@
 use crate::AppState;
 use axum::{
     Json, Router,
-    extract::State,
-    http::StatusCode,
-    response::{IntoResponse, Response},
+    extract::{Path, State},
     routing::get,
 };
 use regex::Regex;
@@ -11,35 +9,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+\.\d+").unwrap());
-static OFFICIAL_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"-(?:UNOFFICIAL|unofficial)").unwrap());
-
 pub fn api_router() -> Router<AppState> {
-    Router::new().route("/stats", get(list_stats).post(create_stat))
-}
-
-enum ApiError {
-    Db(sqlx::Error),
-    BadRequest(&'static str),
-}
-
-impl From<sqlx::Error> for ApiError {
-    fn from(e: sqlx::Error) -> Self {
-        ApiError::Db(e)
-    }
-}
-
-impl IntoResponse for ApiError {
-    fn into_response(self) -> Response {
-        match self {
-            ApiError::Db(e) => {
-                eprintln!("database error: {:?}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, "sql error").into_response()
-            }
-            ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg).into_response(),
-        }
-    }
+    Router::new()
+        .route("/stats", get(list_stats).post(create_stat))
+        .route("/stats/{thing}/{name}", get(filtered_stats))
 }
 
 #[derive(Serialize)]
@@ -50,7 +23,9 @@ struct StatsResponse {
     total: usize,
 }
 
-async fn list_stats(State(state): State<AppState>) -> Result<Json<StatsResponse>, ApiError> {
+async fn list_stats(
+    State(state): State<AppState>,
+) -> Result<Json<StatsResponse>, super::RouterError> {
     let models_fut = sqlx::query!(
         r#"SELECT model AS "model!: String", COUNT(*) AS count
            FROM stats WHERE model IS NOT NULL
@@ -94,6 +69,74 @@ async fn list_stats(State(state): State<AppState>) -> Result<Json<StatsResponse>
     }))
 }
 
+async fn filtered_stats(
+    State(state): State<AppState>,
+    Path((thing, name)): Path<(String, String)>,
+) -> Result<Json<StatsResponse>, super::RouterError> {
+    macro_rules! queries_by {
+        ($col:literal) => {
+            [
+                concat!(
+                    "SELECT model, COUNT(*) FROM stats ",
+                    "WHERE model IS NOT NULL AND ",
+                    $col,
+                    " = ? ",
+                    "GROUP BY model ORDER BY 2 DESC LIMIT 250",
+                ),
+                concat!(
+                    "SELECT country, COUNT(*) FROM stats ",
+                    "WHERE country IS NOT NULL AND ",
+                    $col,
+                    " = ? ",
+                    "GROUP BY country ORDER BY 2 DESC LIMIT 250",
+                ),
+                concat!(
+                    "SELECT version, COUNT(*) FROM stats ",
+                    "WHERE version IS NOT NULL AND ",
+                    $col,
+                    " = ? ",
+                    "GROUP BY version ORDER BY 2 DESC LIMIT 250",
+                ),
+                concat!("SELECT COUNT(*) FROM stats WHERE ", $col, " = ?"),
+            ]
+        };
+    }
+
+    let [model_sql, country_sql, version_sql, total_sql]: [&'static str; 4] = match thing.as_str() {
+        "model" => queries_by!("model"),
+        "country" => queries_by!("country"),
+        "version" => queries_by!("version"),
+        "carrier" => queries_by!("carrier"),
+        _ => return Err(super::RouterError::BadRequest("invalid filter column")),
+    };
+
+    let models_fut = sqlx::query_as::<_, (String, i64)>(model_sql)
+        .bind(&name)
+        .fetch_all(&state.pool);
+    let countries_fut = sqlx::query_as::<_, (String, i64)>(country_sql)
+        .bind(&name)
+        .fetch_all(&state.pool);
+    let versions_fut = sqlx::query_as::<_, (String, i64)>(version_sql)
+        .bind(&name)
+        .fetch_all(&state.pool);
+    let total_fut = sqlx::query_scalar::<_, i64>(total_sql)
+        .bind(&name)
+        .fetch_one(&state.pool);
+
+    let (models, countries, versions, total) =
+        tokio::try_join!(models_fut, countries_fut, versions_fut, total_fut)?;
+
+    Ok(Json(StatsResponse {
+        model: models.into_iter().map(|(k, c)| (k, c as usize)).collect(),
+        country: countries
+            .into_iter()
+            .map(|(k, c)| (k, c as usize))
+            .collect(),
+        version: versions.into_iter().map(|(k, c)| (k, c as usize)).collect(),
+        total: total as usize,
+    }))
+}
+
 #[derive(Deserialize)]
 struct StatInput {
     device_id: String,
@@ -104,10 +147,14 @@ struct StatInput {
     carrier_id: Option<String>,
 }
 
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+\.\d+").unwrap());
+static OFFICIAL_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"-(?:UNOFFICIAL|unofficial)").unwrap());
+
 async fn create_stat(
     State(state): State<AppState>,
     Json(mut input): Json<StatInput>,
-) -> Result<&'static str, ApiError> {
+) -> Result<&'static str, super::RouterError> {
     let banned_version: Option<i64> = sqlx::query_scalar!(
         "SELECT 1 FROM banned WHERE version = ? LIMIT 1",
         input.version
@@ -127,18 +174,20 @@ async fn create_stat(
     }
 
     if input.name != "x86_64" && !input.version.ends_with(&input.name) {
-        return Err(ApiError::BadRequest("version string must end with -model"));
+        return Err(super::RouterError::BadRequest(
+            "version string must end with -model",
+        ));
     }
 
     if input.country.len() != 2 && input.country != "Unknown" {
-        return Err(ApiError::BadRequest(
+        return Err(super::RouterError::BadRequest(
             "country must be a two letter iso code",
         ));
     }
 
     let version = VERSION_REGEX
         .find(&input.version)
-        .ok_or(ApiError::BadRequest(
+        .ok_or(super::RouterError::BadRequest(
             "version must start with version code (ie, 22.1)",
         ))?
         .as_str()
@@ -166,27 +215,4 @@ async fn create_stat(
     .await?;
 
     Ok("neat")
-}
-
-pub fn internal_router() -> Router<AppState> {
-    Router::new().route("/ban/list", get(list_bans))
-}
-
-#[derive(Serialize)]
-struct BannedItem {
-    version: String,
-    model: String,
-    note: Option<String>,
-}
-
-async fn list_bans(State(state): State<AppState>) -> Result<Json<Vec<BannedItem>>, ApiError> {
-    let items = sqlx::query_as!(
-        BannedItem,
-        r#"SELECT version AS "version!: String", model AS "model!: String", note
-           FROM banned"#
-    )
-    .fetch_all(&state.pool)
-    .await?;
-
-    Ok(Json(items))
 }
