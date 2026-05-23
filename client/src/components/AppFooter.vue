@@ -19,11 +19,11 @@ const year = new Date().getFullYear()
         <p>
           Licensed under
           <a
-            href="https://creativecommons.org/licenses/by-sa/3.0/"
+            href="https://creativecommons.org/licenses/by-sa/4.0/"
             target="_blank"
             rel="noopener"
             class="text-brand-primary hover:underline"
-            >CC BY-SA 3.0</a
+            >CC BY-SA 4.0</a
           >.
         </p>
         <p>Data refreshed hourly</p>
