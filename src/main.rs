@@ -16,6 +16,7 @@ pub struct AppState {
 async fn main() -> Result<(), sqlx::Error> {
     let database_url = env::var("DATABASE_URL").unwrap_or("sqlite:dev.db".to_string());
     let pool = sqlx::SqlitePool::connect(&database_url).await?;
+    sqlx::migrate!().run(&pool).await?;
 
     let state = AppState { pool };
 
@@ -26,9 +27,12 @@ async fn main() -> Result<(), sqlx::Error> {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
     println!("listening on {}", listener.local_addr().unwrap());
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
 
     Ok(())
 }

@@ -1,0 +1,33 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT model AS \"model!: String\", COUNT(*) AS count\n           FROM stats WHERE model IS NOT NULL\n           GROUP BY model ORDER BY count DESC LIMIT 250",
+  "describe": {
+    "columns": [
+      {
+        "name": "model!: String",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "stats",
+            "name": "model"
+          }
+        }
+      },
+      {
+        "name": "count",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true,
+      false
+    ]
+  },
+  "hash": "0330774ca8c43de001770bec8fadfdc705318ba54133e0f21aaf1f721701cf19"
+}
