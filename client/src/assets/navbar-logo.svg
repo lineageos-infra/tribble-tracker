@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 39.934929 16.189163"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="navbar-logo.svg"
+   width="39.934929"
+   height="16.189163"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1022"
+     id="namedview6"
+     showgrid="false"
+     inkscape:zoom="24.154768"
+     inkscape:cx="14.08877"
+     inkscape:cy="12.831686"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4"
+     inkscape:document-rotation="0" />
+  <path
+     d="m 36.016743,8.19 a 4,4 0 0 0 -3,1.33 l -0.23,-0.09 a 29.62,29.62 0 0 0 -4.77,-1.43 v 0 a 8,8 0 0 0 -16,0 h -0.22 A 29.53,29.53 0 0 0 7.1967435,9.39 l -0.23,0.09 a 4,4 0 1 0 0.93,1.78 v 0 a 27.62,27.62 0 0 1 4.2899995,-1.29 8,8 0 0 0 15.57,0 27.55,27.55 0 0 1 4.29,1.28 v 0 a 4,4 0 1 0 3.97,-3.06 z m -31.9999995,6 a 2,2 0 1 1 2,-2 2,2 0 0 1 -2,2 z m 15.9999995,0 a 6,6 0 1 1 6,-6 6,6 0 0 1 -6,6 z m 16,0 a 2,2 0 1 1 2,-2 2,2 0 0 1 -2,2 z m -13,-6 a 3,3 0 1 1 -3,-3 3,3 0 0 1 3,3 z"
+     id="path2"
+     style="fill:#167c80;fill-opacity:1" />
+</svg>

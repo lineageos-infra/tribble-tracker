@@ -1,0 +1,92 @@
+@import 'tailwindcss';
+@import "@fontsource/roboto";
+
+:root {
+  --color-dark: #121212;
+  --color-brand-light: #cce8e9;
+  --color-brand-dark: #324b4c;
+  --color-brand-primary: #167c80;
+
+  --font-sans: 'Roboto', sans-serif;
+
+  /* Light theme neutrals */
+  --color-surface: #fafafa;
+  --color-surface-elevated: #ffffff;
+  --color-surface-hover: rgba(22, 124, 128, 0.08);
+  --color-on-surface: #1a1c1c;
+  --color-on-surface-muted: #5a6060;
+  --color-outline: #d6dada;
+  --color-outline-variant: #e8ebeb;
+  --color-bar-track: rgba(22, 124, 128, 0.12);
+  --color-bar-fill: var(--color-brand-primary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: var(--color-dark);
+    --color-surface-elevated: #1e2020;
+    --color-surface-hover: rgba(204, 232, 233, 0.08);
+    --color-on-surface: #e3e4e4;
+    --color-on-surface-muted: #a8adad;
+    --color-outline: #3a3f3f;
+    --color-outline-variant: #2a2e2e;
+    --color-bar-track: rgba(204, 232, 233, 0.1);
+    --color-bar-fill: var(--color-brand-light);
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-sans);
+
+  --color-dark: var(--color-dark);
+  --color-brand-light: var(--color-brand-light);
+  --color-brand-dark: var(--color-brand-dark);
+  --color-brand-primary: var(--color-brand-primary);
+
+  --color-surface: var(--color-surface);
+  --color-surface-elevated: var(--color-surface-elevated);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-on-surface: var(--color-on-surface);
+  --color-on-surface-muted: var(--color-on-surface-muted);
+  --color-outline: var(--color-outline);
+  --color-outline-variant: var(--color-outline-variant);
+  --color-bar-track: var(--color-bar-track);
+  --color-bar-fill: var(--color-bar-fill);
+}
+
+html,
+body {
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* unovis chart theming via CSS variables */
+:root {
+  --vis-font-family: var(--font-sans);
+  --vis-color0: var(--color-brand-primary);
+  --vis-color1: #4ea1a5;
+  --vis-color2: #7ebcbe;
+  --vis-color3: #a8d4d6;
+  --vis-color4: #324b4c;
+  --vis-color5: #5b7475;
+  --vis-tooltip-background-color: var(--color-surface-elevated);
+  --vis-tooltip-text-color: var(--color-on-surface);
+  --vis-tooltip-border-color: var(--color-outline);
+  --vis-donut-background-color: var(--color-bar-track);
+  --vis-donut-central-label-text-color: var(--color-on-surface);
+  --vis-donut-central-sub-label-text-color: var(--color-on-surface-muted);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --vis-color0: var(--color-brand-light);
+    --vis-color1: #9bcfd1;
+    --vis-color2: #6fb1b3;
+    --vis-color3: #4d9395;
+    --vis-color4: #cce8e9;
+    --vis-color5: #324b4c;
+  }
+}
