@@ -1,5 +1,6 @@
 use axum::Router;
 use std::env;
+use std::net::SocketAddr;
 use tokio::signal;
 
 pub mod router;
@@ -25,7 +26,7 @@ async fn main() -> Result<(), sqlx::Error> {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
     println!("listening on {}", listener.local_addr().unwrap());
-    axum::serve(listener, app)
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
         .await?;
 
