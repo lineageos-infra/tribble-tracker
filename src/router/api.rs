@@ -6,13 +6,14 @@ use axum::{
 };
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use sqlx::{AssertSqlSafe, SqlSafeStr};
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
 pub fn api_router() -> Router<AppState> {
     Router::new()
         .route("/stats", get(list_stats).post(create_stat))
-        .route("/stats/{thing}/{name}", get(filtered_stats))
+        .route("/stats/{column}/{name}", get(filtered_stats))
 }
 
 #[derive(Serialize)]
@@ -71,68 +72,45 @@ async fn list_stats(
 
 async fn filtered_stats(
     State(state): State<AppState>,
-    Path((thing, name)): Path<(String, String)>,
+    Path((column, name)): Path<(String, String)>,
 ) -> Result<Json<StatsResponse>, super::RouterError> {
-    macro_rules! queries_by {
-        ($col:literal) => {
-            [
-                concat!(
-                    "SELECT model, COUNT(*) FROM stats ",
-                    "WHERE model IS NOT NULL AND ",
-                    $col,
-                    " = ? ",
-                    "GROUP BY model ORDER BY 2 DESC LIMIT 250",
-                ),
-                concat!(
-                    "SELECT country, COUNT(*) FROM stats ",
-                    "WHERE country IS NOT NULL AND ",
-                    $col,
-                    " = ? ",
-                    "GROUP BY country ORDER BY 2 DESC LIMIT 250",
-                ),
-                concat!(
-                    "SELECT version, COUNT(*) FROM stats ",
-                    "WHERE version IS NOT NULL AND ",
-                    $col,
-                    " = ? ",
-                    "GROUP BY version ORDER BY 2 DESC LIMIT 250",
-                ),
-                concat!("SELECT COUNT(*) FROM stats WHERE ", $col, " = ?"),
-            ]
-        };
-    }
-
-    let [model_sql, country_sql, version_sql, total_sql]: [&'static str; 4] = match thing.as_str() {
-        "model" => queries_by!("model"),
-        "country" => queries_by!("country"),
-        "version" => queries_by!("version"),
-        "carrier" => queries_by!("carrier"),
+    let filter_col = match column.as_str() {
+        "model" | "country" | "version" | "carrier" => column.as_str(),
         _ => return Err(super::RouterError::BadRequest("invalid filter column")),
     };
 
-    let models_fut = sqlx::query_as::<_, (String, i64)>(model_sql)
-        .bind(&name)
-        .fetch_all(&state.pool);
-    let countries_fut = sqlx::query_as::<_, (String, i64)>(country_sql)
-        .bind(&name)
-        .fetch_all(&state.pool);
-    let versions_fut = sqlx::query_as::<_, (String, i64)>(version_sql)
-        .bind(&name)
-        .fetch_all(&state.pool);
-    let total_fut = sqlx::query_scalar::<_, i64>(total_sql)
-        .bind(&name)
-        .fetch_one(&state.pool);
+    let group_by = |group_col: &str| {
+        format!(
+            "SELECT {group_col}, COUNT(*) FROM stats \
+             WHERE {group_col} IS NOT NULL AND {filter_col} = ? \
+             GROUP BY {group_col} ORDER BY 2 DESC LIMIT 250"
+        )
+    };
+    let total_sql = format!("SELECT COUNT(*) FROM stats WHERE {filter_col} = ?");
 
-    let (models, countries, versions, total) =
-        tokio::try_join!(models_fut, countries_fut, versions_fut, total_fut)?;
+    let group_fut = |sql: String| {
+        sqlx::query_as::<_, (String, i64)>(AssertSqlSafe(sql).into_sql_str())
+            .bind(&name)
+            .fetch_all(&state.pool)
+    };
+
+    let (models, countries, versions, total) = tokio::try_join!(
+        group_fut(group_by("model")),
+        group_fut(group_by("country")),
+        group_fut(group_by("version")),
+        sqlx::query_scalar::<_, i64>(AssertSqlSafe(total_sql).into_sql_str())
+            .bind(&name)
+            .fetch_one(&state.pool),
+    )?;
+
+    let to_map = |rows: Vec<(String, i64)>| -> HashMap<String, usize> {
+        rows.into_iter().map(|(k, c)| (k, c as usize)).collect()
+    };
 
     Ok(Json(StatsResponse {
-        model: models.into_iter().map(|(k, c)| (k, c as usize)).collect(),
-        country: countries
-            .into_iter()
-            .map(|(k, c)| (k, c as usize))
-            .collect(),
-        version: versions.into_iter().map(|(k, c)| (k, c as usize)).collect(),
+        model: to_map(models),
+        country: to_map(countries),
+        version: to_map(versions),
         total: total as usize,
     }))
 }
