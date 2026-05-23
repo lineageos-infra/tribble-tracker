@@ -158,6 +158,9 @@ onBeforeUnmount(() => {
         :cluster-color="clusterColor"
         :fit-view-on-init="true"
         :fit-view-padding="[40, 40]"
+        :attribution="[
+          `<a href=&quot;https://openfreemap.org&quot; target=&quot;_blank&quot;>OpenFreeMap</a> | <a href=&quot;https://www.openmaptiles.org/&quot; target=&quot;_blank&quot;>© OpenMapTiles</a> | <a href=&quot;https://www.openstreetmap.org/copyright&quot; target=&quot;_blank&quot;>Data from OpenStreetMap</a>`
+        ]"
       />
       <div
         v-if="tooltipPoint"
