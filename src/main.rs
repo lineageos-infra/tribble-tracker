@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::Router;
+use sqlx::SqlitePool;
+use sqlx::sqlite::SqliteConnectOptions;
 use std::env;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
@@ -22,8 +24,11 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
-    let database_url = env::var("DATABASE_URL").unwrap_or("sqlite:dev.db".to_string());
-    let pool = sqlx::SqlitePool::connect(&database_url).await?;
+    let database_url = env::var("DATABASE_URL").unwrap_or("dev.db".to_string());
+    let options = SqliteConnectOptions::new()
+        .filename(database_url)
+        .create_if_missing(true);
+    let pool = SqlitePool::connect_with(options).await?;
     sqlx::migrate!().run(&pool).await?;
 
     let banned_cache: tasks::BannedCache = Arc::new(RwLock::new(tasks::Banned::default()));
