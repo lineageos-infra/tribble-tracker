@@ -9,10 +9,6 @@ tokio = { version = "1.52.3", features = ["full"] }
 serde = { version = "1.0.228", features = ["derive"] }
 sqlx = { version = "0.9.0", features = ["runtime-tokio", "sqlite", "macros"] }
 regex = "1.11"
-dotenvy = "0.15.7"
-
-[build]
-rustflags = ["-C", "target-cpu=native"]
 
 [profile.release]
 lto = "fat"
