@@ -5,12 +5,14 @@ SPDX-License-Identifier: Apache-2.0
 -->
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import CountryMap from '@/components/CountryMap.vue'
 import HeroTotal from '@/components/HeroTotal.vue'
 import StatCard from '@/components/StatCard.vue'
 import { useStats } from '@/composables/useStats'
 
 const { data, loading, error } = useStats()
+const hasCarrier = computed(() => !!data.value?.carrier && Object.keys(data.value.carrier).length > 0)
 </script>
 
 <template>
@@ -32,12 +34,12 @@ const { data, loading, error } = useStats()
     </p>
 
     <template v-else-if="data">
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div class="grid gap-4 md:grid-cols-2" :class="hasCarrier ? 'xl:grid-cols-4' : 'xl:grid-cols-3'">
         <StatCard title="Top Devices" column="model" :entries="data.model" />
         <StatCard title="Top Countries" column="country" :entries="data.country" />
         <StatCard title="Top Versions" column="version" :entries="data.version" />
         <StatCard
-          v-if="data.carrier && Object.keys(data.carrier).length"
+          v-if="hasCarrier"
           title="Top Carriers"
           column="carrier"
           :entries="data.carrier"
