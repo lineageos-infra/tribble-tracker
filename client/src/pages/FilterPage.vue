@@ -53,7 +53,7 @@ const { data, loading, error } = useStats(() => {
       Loading…
     </p>
 
-    <div v-else-if="data" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div v-else-if="data" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <StatCard
         v-if="column !== 'model' && Object.keys(data.model).length"
         title="Top Devices"
