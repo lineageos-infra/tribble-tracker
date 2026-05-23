@@ -8,14 +8,14 @@ SPDX-License-Identifier: Apache-2.0
 import FilterChip from '@/components/FilterChip.vue'
 import StatCard from '@/components/StatCard.vue'
 import { useStats } from '@/composables/useStats'
-import { activeFiltersFromRoute, routeForClearingFilter } from '@/utils/filters'
+import { filtersFromRoute, routeForClearingFilter } from '@/utils/filters'
 import { formatNumber } from '@/utils/format'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const filters = computed(() => activeFiltersFromRoute(route))
-const primaryFilter = computed(() => filters.value[0] ?? null)
+const filters = computed(() => filtersFromRoute(route))
+const primaryFilter = computed(() => filters.value[0])
 
 const { data, loading, error } = useStats(() => {
   if (!filters.value.length) return null
@@ -59,25 +59,25 @@ const { data, loading, error } = useStats(() => {
 
     <div v-else-if="data" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <StatCard
-        v-if="primaryFilter?.column !== 'model' && Object.keys(data.model).length"
+        v-if="primaryFilter.column !== 'model' && Object.keys(data.model).length"
         title="Top Devices"
         column="model"
         :entries="data.model"
       />
       <StatCard
-        v-if="primaryFilter?.column !== 'country' && Object.keys(data.country).length"
+        v-if="primaryFilter.column !== 'country' && Object.keys(data.country).length"
         title="Top Countries"
         column="country"
         :entries="data.country"
       />
       <StatCard
-        v-if="primaryFilter?.column !== 'version' && Object.keys(data.version).length"
+        v-if="primaryFilter.column !== 'version' && Object.keys(data.version).length"
         title="Top Versions"
         column="version"
         :entries="data.version"
       />
       <StatCard
-        v-if="primaryFilter?.column !== 'carrier' && data.carrier && Object.keys(data.carrier).length"
+        v-if="primaryFilter.column !== 'carrier' && data.carrier && Object.keys(data.carrier).length"
         title="Top Carriers"
         column="carrier"
         :entries="data.carrier"
