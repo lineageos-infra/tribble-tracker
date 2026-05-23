@@ -1,4 +1,4 @@
-FROM rust:1.95-alpine AS chef
+FROM rust:1.95-alpine3.23 AS chef
 USER root
 RUN cargo install --locked cargo-chef
 WORKDIR /app
@@ -14,7 +14,7 @@ RUN cargo chef cook --recipe-path recipe.json
 COPY . .
 RUN cargo build --release
 
-FROM node:24-alpine AS client
+FROM node:24-alpine3.23 AS client
 RUN npm install -g pnpm
 WORKDIR /client
 COPY client/package.json client/pnpm-lock.yaml client/pnpm-workspace.yaml .
@@ -22,7 +22,7 @@ RUN pnpm install --frozen-lockfile
 COPY client .
 RUN pnpm build
 
-FROM alpine
+FROM alpine:3.23
 RUN apk add --no-cache curl build-base tmux sqlite
 WORKDIR /app
 COPY --from=builder /app/target/release/tribble-tracker-rs /app/tribble-tracker-rs
