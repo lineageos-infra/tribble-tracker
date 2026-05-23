@@ -25,6 +25,12 @@ All stats are displayed, you'll want to drop old data if that's a thing you care
 
 ## Development
 
+Create database:
+
+```sh
+touch dev.db
+```
+
 Install [Rust and Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html), then start the backend from the repo root:
 
 ```sh
