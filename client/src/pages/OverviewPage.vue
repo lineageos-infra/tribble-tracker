@@ -13,14 +13,14 @@ const { data, loading, error } = useStats()
 
     <p
       v-if="error"
-      class="rounded-2xl border border-outline-variant bg-surface-elevated p-6 text-center text-sm text-on-surface-muted"
+      class="rounded-2xl bg-surface-elevated p-6 text-center text-sm text-on-surface-muted"
     >
       Couldn&rsquo;t load statistics. {{ error.message }}
     </p>
 
     <p
       v-else-if="loading && !data"
-      class="rounded-2xl border border-outline-variant bg-surface-elevated p-6 text-center text-sm text-on-surface-muted"
+      class="rounded-2xl bg-surface-elevated p-6 text-center text-sm text-on-surface-muted"
     >
       Loading…
     </p>

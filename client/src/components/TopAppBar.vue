@@ -11,9 +11,7 @@ import navbarLogo from '@/assets/navbar-logo.svg'
         aria-label="LineageOS Statistics — home"
       >
         <img :src="navbarLogo" alt="" class="h-6 w-auto" aria-hidden="true" />
-        <div class="flex flex-col leading-tight">
-          <span class="text-base font-medium text-on-surface">LineageOS Statistics</span>
-        </div>
+        <span class="text-base font-medium text-on-surface">LineageOS Statistics</span>
       </RouterLink>
 
       <div class="ml-auto flex items-center gap-1">

@@ -19,13 +19,13 @@ const display = computed(() => formatNumber(Math.round(tweened.value)))
 
 <template>
   <section
-    class="flex flex-col items-center gap-2 rounded-3xl border border-outline-variant bg-surface-elevated px-6 py-10 text-center sm:py-14"
+    class="flex flex-col items-center gap-2 rounded-3xl bg-surface-elevated px-6 py-10 text-center sm:py-14"
   >
-    <p class="text-xs font-medium tracking-wider text-on-surface-muted uppercase">
-      {{ label }}
-    </p>
     <p class="text-5xl font-medium tabular-nums text-on-surface sm:text-6xl md:text-7xl">
       {{ display }}
+    </p>
+    <p class="text-xs font-medium tracking-wider text-on-surface-muted uppercase">
+      {{ label }}
     </p>
   </section>
 </template>

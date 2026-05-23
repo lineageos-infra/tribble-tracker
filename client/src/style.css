@@ -1,7 +1,8 @@
 @import 'tailwindcss';
-@import "@fontsource/roboto";
+@import '@fontsource/roboto';
 
 :root {
+  color-scheme: light;
   --color-dark: #121212;
   --color-brand-light: #cce8e9;
   --color-brand-dark: #324b4c;
@@ -17,12 +18,13 @@
   --color-on-surface-muted: #5a6060;
   --color-outline: #d6dada;
   --color-outline-variant: #e8ebeb;
-  --color-bar-track: rgba(22, 124, 128, 0.12);
+  --color-bar-track: rgba(19, 45, 46, 0.12);
   --color-bar-fill: var(--color-brand-primary);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --color-surface: var(--color-dark);
     --color-surface-elevated: #1e2020;
     --color-surface-hover: rgba(204, 232, 233, 0.08);
@@ -75,9 +77,6 @@ body {
   --vis-tooltip-background-color: var(--color-surface-elevated);
   --vis-tooltip-text-color: var(--color-on-surface);
   --vis-tooltip-border-color: var(--color-outline);
-  --vis-donut-background-color: var(--color-bar-track);
-  --vis-donut-central-label-text-color: var(--color-on-surface);
-  --vis-donut-central-sub-label-text-color: var(--color-on-surface-muted);
 }
 
 @media (prefers-color-scheme: dark) {

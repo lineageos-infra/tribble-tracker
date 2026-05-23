@@ -26,9 +26,7 @@ const filtered = computed(() => {
 </script>
 
 <template>
-  <section
-    class="flex h-full flex-col rounded-3xl border border-outline-variant bg-surface-elevated p-4 sm:p-5"
-  >
+  <section class="flex h-full flex-col rounded-3xl bg-surface-elevated p-4 sm:p-5">
     <header class="mb-3 flex items-baseline justify-between gap-2 px-2">
       <h2 class="text-lg font-medium text-on-surface">{{ title }}</h2>
       <span class="text-xs text-on-surface-muted">

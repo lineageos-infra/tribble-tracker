@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { COUNTRY_LAT_LONG } from '@/data/countryLatLong'
 import { countryFlag, countryName, formatNumber } from '@/utils/format'
-import { VisLeafletMap, VisSingleContainer } from '@unovis/vue'
-import { usePreferredDark } from '@vueuse/core'
+import { VisLeafletMap } from '@unovis/vue'
+import { useMediaQuery, usePreferredDark } from '@vueuse/core'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 interface Point {
@@ -52,6 +52,8 @@ const pointRadius = (d: Point) => {
 }
 
 const isDark = usePreferredDark()
+const isSmUp = useMediaQuery('(min-width: 640px)')
+const mapHeight = computed(() => (isSmUp.value ? 520 : 460))
 const tileStyle = computed(() =>
   isDark.value
     ? 'https://tiles.openfreemap.org/styles/dark'
@@ -126,9 +128,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section
-    class="flex flex-col gap-3 rounded-3xl border border-outline-variant bg-surface-elevated p-4 sm:p-5"
-  >
+  <section class="flex flex-col gap-3">
     <header class="flex flex-wrap items-baseline justify-between gap-2 px-2">
       <div>
         <h2 class="text-lg font-medium text-on-surface">Where installs come from</h2>
@@ -137,24 +137,23 @@ onBeforeUnmount(() => {
         </p>
       </div>
     </header>
-    <div ref="mapWrapper" class="relative h-115 w-full overflow-hidden rounded-2xl sm:h-130">
-      <VisSingleContainer :height="520">
-        <VisLeafletMap
-          :key="isDark ? 'dark' : 'light'"
-          :data="points"
-          :style="tileStyle"
-          :point-id="pointId"
-          :point-latitude="pointLat"
-          :point-longitude="pointLng"
-          :point-radius="pointRadius"
-          :point-color="pointColor"
-          :point-label="pointLabel"
-          :cluster-color="clusterColor"
-          :fit-view-on-init="true"
-          :fit-view-padding="[40, 40]"
-          :attribution="['OpenFreeMap', 'OpenMapTiles', 'OpenStreetMap contributors']"
-        />
-      </VisSingleContainer>
+    <div ref="mapWrapper" class="map-container relative w-full overflow-hidden rounded-3xl">
+      <VisLeafletMap
+        :key="isDark ? 'dark' : 'light'"
+        :height="mapHeight"
+        :data="points"
+        :style="tileStyle"
+        :point-id="pointId"
+        :point-latitude="pointLat"
+        :point-longitude="pointLng"
+        :point-radius="pointRadius"
+        :point-color="pointColor"
+        :point-label="pointLabel"
+        :cluster-color="clusterColor"
+        :fit-view-on-init="true"
+        :fit-view-padding="[40, 40]"
+        :attribution="['OpenFreeMap', 'OpenMapTiles', 'OpenStreetMap contributors']"
+      />
       <div
         v-if="tooltipPoint"
         class="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-md border border-outline-variant bg-surface-elevated px-3 py-2 text-xs whitespace-nowrap text-on-surface shadow-md"
@@ -171,3 +170,10 @@ onBeforeUnmount(() => {
     </div>
   </section>
 </template>
+
+<style scoped>
+.map-container {
+  --vis-map-container-background-color: transparent;
+  --vis-dark-map-container-background-color: transparent;
+}
+</style>
