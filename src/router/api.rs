@@ -5,7 +5,7 @@
 use crate::AppState;
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Query, State},
     routing::get,
 };
 use cached::macros::cached;
@@ -18,7 +18,104 @@ use std::sync::LazyLock;
 pub fn api_router() -> Router<AppState> {
     Router::new()
         .route("/stats", get(list_stats).post(create_stat))
-        .route("/stats/{column}/{name}", get(filtered_stats))
+        .route("/stats/filter", get(filtered_stats))
+}
+
+#[derive(Deserialize, Clone, Hash)]
+struct FilterQuery {
+    #[serde(default)]
+    model: Option<String>,
+    #[serde(default)]
+    country: Option<String>,
+    #[serde(default)]
+    version: Option<String>,
+    #[serde(default)]
+    carrier: Option<String>,
+}
+
+#[derive(Clone)]
+struct FilterClause {
+    column: &'static str,
+    name: String,
+}
+
+impl FilterQuery {
+    fn into_filters(self) -> Vec<FilterClause> {
+        let mut filters = Vec::new();
+
+        if let Some(name) = self.model {
+            filters.push(FilterClause {
+                column: "model",
+                name,
+            });
+        }
+        if let Some(name) = self.country {
+            filters.push(FilterClause {
+                column: "country",
+                name,
+            });
+        }
+        if let Some(name) = self.version {
+            filters.push(FilterClause {
+                column: "version",
+                name,
+            });
+        }
+        if let Some(name) = self.carrier {
+            filters.push(FilterClause {
+                column: "carrier",
+                name,
+            });
+        }
+
+        filters
+    }
+}
+
+fn filter_where_clause(filters: &[FilterClause]) -> String {
+    filters
+        .iter()
+        .map(|filter| format!("{} = ?", filter.column))
+        .collect::<Vec<_>>()
+        .join(" AND ")
+}
+
+async fn fetch_filtered_counts(
+    state: &AppState,
+    group_col: &'static str,
+    filters: &[FilterClause],
+) -> Result<Vec<(String, i64)>, sqlx::Error> {
+    let mut sql = format!(
+        "SELECT {group_col}, COUNT(*) FROM stats WHERE {group_col} IS NOT NULL AND {group_col} != ''"
+    );
+    if !filters.is_empty() {
+        sql.push_str(" AND ");
+        sql.push_str(&filter_where_clause(filters));
+    }
+    sql.push_str(&format!(" GROUP BY {group_col} ORDER BY 2 DESC LIMIT 250"));
+
+    let mut query = sqlx::query_as::<_, (String, i64)>(AssertSqlSafe(sql).into_sql_str());
+    for filter in filters {
+        query = query.bind(&filter.name);
+    }
+    query.fetch_all(&state.pool).await
+}
+
+async fn fetch_filtered_total(
+    state: &AppState,
+    filters: &[FilterClause],
+) -> Result<i64, sqlx::Error> {
+    let mut sql = String::from("SELECT COUNT(*) FROM stats");
+    if !filters.is_empty() {
+        sql.push_str(" WHERE ");
+        sql.push_str(&filter_where_clause(filters));
+    }
+
+    let mut query = sqlx::query_scalar::<_, i64>(AssertSqlSafe(sql).into_sql_str());
+    for filter in filters {
+        query = query.bind(&filter.name);
+    }
+    query.fetch_one(&state.pool).await
 }
 
 #[derive(Serialize, Clone)]
@@ -91,48 +188,41 @@ async fn list_stats(state: State<AppState>) -> Result<Json<StatsResponse>, super
     }))
 }
 
+async fn filtered_stats(
+    State(state): State<AppState>,
+    Query(query): Query<FilterQuery>,
+) -> Result<Json<StatsResponse>, super::RouterError> {
+    filtered_stats_inner(state, query).await
+}
+
 #[cached(
     result = true,
     ttl = 3600,
-    key = "(String, String)",
-    convert = r#"{ (path.0.0.clone(), path.0.1.clone()) }"#
+    key = "u64",
+    convert = r#"{
+        use std::hash::{Hash, Hasher};
+        use std::collections::hash_map::DefaultHasher;
+        let mut h = DefaultHasher::new();
+        query.hash(&mut h);
+        h.finish()
+    }"#
 )]
-async fn filtered_stats(
-    state: State<AppState>,
-    path: Path<(String, String)>,
+async fn filtered_stats_inner(
+    state: AppState,
+    query: FilterQuery,
 ) -> Result<Json<StatsResponse>, super::RouterError> {
-    let Path((column, name)) = &path;
-    let filter_col: &'static str = match column.as_str() {
-        "model" => "model",
-        "country" => "country",
-        "version" => "version",
-        "carrier" => "carrier",
-        _ => return Err(super::RouterError::BadRequest("invalid filter column")),
-    };
+    let filters = query.into_filters();
 
-    let group_by = |group_col: &'static str| {
-        format!(
-            "SELECT {group_col}, COUNT(*) FROM stats \
-             WHERE {group_col} IS NOT NULL AND {group_col} != '' AND {filter_col} = ? \
-             GROUP BY {group_col} ORDER BY 2 DESC LIMIT 250"
-        )
-    };
-    let total_sql = format!("SELECT COUNT(*) FROM stats WHERE {filter_col} = ?");
-
-    let group_fut = |sql: String| {
-        sqlx::query_as::<_, (String, i64)>(AssertSqlSafe(sql).into_sql_str())
-            .bind(&name)
-            .fetch_all(&state.pool)
-    };
+    if filters.is_empty() {
+        return list_stats(State(state)).await;
+    }
 
     let (models, countries, versions, carriers, total) = tokio::try_join!(
-        group_fut(group_by("model")),
-        group_fut(group_by("country")),
-        group_fut(group_by("version")),
-        group_fut(group_by("carrier")),
-        sqlx::query_scalar::<_, i64>(AssertSqlSafe(total_sql).into_sql_str())
-            .bind(&name)
-            .fetch_one(&state.pool),
+        fetch_filtered_counts(&state, "model", &filters),
+        fetch_filtered_counts(&state, "country", &filters),
+        fetch_filtered_counts(&state, "version", &filters),
+        fetch_filtered_counts(&state, "carrier", &filters),
+        fetch_filtered_total(&state, &filters),
     )?;
 
     Ok(Json(StatsResponse {
