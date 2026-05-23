@@ -25,10 +25,26 @@ All stats are displayed, you'll want to drop old data if that's a thing you care
 
 ## Development
 
-Install [Rust and Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
+Install [Rust and Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html), then start the backend from the repo root:
+
+```sh
+cargo run
+```
+
+This serves the API on [http://localhost:8080](http://localhost:8080).
+
+To work on the frontend, run the Vite dev server alongside it and access the app at [http://localhost:5173](http://localhost:5173) — `/api` requests are proxied to the backend. See [client/README.md](client/README.md) for details.
+
+## Docker
+
+Build:
+
+```sh
+docker build . --tag "tribble-tracker"
+```
+
 Run:
 
-```bash
-cargo install
-cargo run
+```sh
+docker run --mount type=bind,src=./dev.db,dst=/app/dev.db -p 8080:8080 tribble-tracker
 ```
