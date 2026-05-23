@@ -27,7 +27,7 @@ COPY client .
 RUN pnpm build
 
 FROM alpine:3.23
-RUN apk add --no-cache curl build-base tmux sqlite
+RUN apk add --no-cache curl sqlite
 WORKDIR /app
 COPY --from=builder /app/target/release/tribble-tracker-rs /app/tribble-tracker-rs
 COPY migrations /app/migrations
