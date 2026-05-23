@@ -4,10 +4,10 @@ use axum::{
     extract::{Path, State},
     routing::get,
 };
+use indexmap::IndexMap;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sqlx::{AssertSqlSafe, SqlSafeStr};
-use std::collections::HashMap;
 use std::sync::LazyLock;
 
 pub fn api_router() -> Router<AppState> {
@@ -18,9 +18,9 @@ pub fn api_router() -> Router<AppState> {
 
 #[derive(Serialize)]
 struct StatsResponse {
-    model: HashMap<String, usize>,
-    country: HashMap<String, usize>,
-    version: HashMap<String, usize>,
+    model: IndexMap<String, usize>,
+    country: IndexMap<String, usize>,
+    version: IndexMap<String, usize>,
     total: usize,
 }
 
