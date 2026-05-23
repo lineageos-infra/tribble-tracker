@@ -67,8 +67,11 @@ const filtered = computed(() => {
           <StatBarRow :rank="i + 1" :column="column" :name="name" :count="count" :max="max" />
         </li>
       </ol>
-      <p v-else class="px-3 py-8 text-center text-sm text-on-surface-muted">
+      <p v-else-if="query.length" class="px-3 py-8 text-center text-sm text-on-surface-muted">
         No matches for &ldquo;{{ query }}&rdquo;
+      </p>
+      <p v-else-if="!list.length" class="px-3 py-8 text-center text-sm text-on-surface-muted">
+        No data available
       </p>
     </div>
   </section>
