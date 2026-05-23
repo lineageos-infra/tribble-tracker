@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { FilterColumn, StatsResponse } from './types'
+import type { StatsResponse } from './types'
+import type { ActiveFilter } from '@/utils/filters'
 
 async function request<T>(url: string): Promise<T> {
   const res = await fetch(url)
@@ -16,6 +17,14 @@ export function getStats(): Promise<StatsResponse> {
   return request<StatsResponse>('/api/v1/stats')
 }
 
-export function getFilteredStats(column: FilterColumn, name: string): Promise<StatsResponse> {
-  return request<StatsResponse>(`/api/v1/stats/${column}/${encodeURIComponent(name)}`)
+export function getFilteredStats(filters: ActiveFilter[]): Promise<StatsResponse> {
+  if (!filters.length) return getStats()
+
+  const query = new URLSearchParams()
+  for (const filter of filters) {
+    query.set(filter.column, filter.name)
+  }
+
+  const url = `/api/v1/stats/filter?${query.toString()}`
+  return request<StatsResponse>(url)
 }
