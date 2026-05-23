@@ -4,6 +4,7 @@ use axum::{
     extract::{Path, State},
     routing::get,
 };
+use cached::macros::cached;
 use indexmap::IndexMap;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -16,7 +17,7 @@ pub fn api_router() -> Router<AppState> {
         .route("/stats/{column}/{name}", get(filtered_stats))
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct StatsResponse {
     model: IndexMap<String, usize>,
     country: IndexMap<String, usize>,
@@ -24,6 +25,7 @@ struct StatsResponse {
     total: usize,
 }
 
+#[cached(result = true, ttl = 3600, key = "()", convert = r#"{ () }"#)]
 async fn list_stats(state: State<AppState>) -> Result<Json<StatsResponse>, super::RouterError> {
     let models_fut = sqlx::query!(
         r#"SELECT model AS "model!: String", COUNT(*) AS count
@@ -68,10 +70,17 @@ async fn list_stats(state: State<AppState>) -> Result<Json<StatsResponse>, super
     }))
 }
 
+#[cached(
+    result = true,
+    ttl = 3600,
+    key = "(String, String)",
+    convert = r#"{ (path.0.0.clone(), path.0.1.clone()) }"#
+)]
 async fn filtered_stats(
     state: State<AppState>,
-    Path((column, name)): Path<(String, String)>,
+    path: Path<(String, String)>,
 ) -> Result<Json<StatsResponse>, super::RouterError> {
+    let Path((column, name)) = &path;
     let filter_col: &'static str = match column.as_str() {
         "model" => "model",
         "country" => "country",
