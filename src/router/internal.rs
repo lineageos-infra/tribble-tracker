@@ -19,7 +19,7 @@ pub fn internal_router() -> Router<AppState> {
 }
 
 async fn require_loopback(
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    addr: ConnectInfo<SocketAddr>,
     req: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
@@ -55,8 +55,8 @@ struct BanModelInput {
 }
 
 async fn ban_model(
-    State(state): State<AppState>,
-    Json(input): Json<BanModelInput>,
+    state: State<AppState>,
+    input: Json<BanModelInput>,
 ) -> Result<&'static str, super::RouterError> {
     if input.model.is_empty() {
         return Err(super::RouterError::BadRequest("model is required"));
@@ -80,8 +80,8 @@ struct BanVersionInput {
 }
 
 async fn ban_version(
-    State(state): State<AppState>,
-    Json(input): Json<BanVersionInput>,
+    state: State<AppState>,
+    input: Json<BanVersionInput>,
 ) -> Result<&'static str, super::RouterError> {
     if input.version.is_empty() {
         return Err(super::RouterError::BadRequest("version is required"));

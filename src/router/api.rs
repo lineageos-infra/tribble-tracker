@@ -24,9 +24,7 @@ struct StatsResponse {
     total: usize,
 }
 
-async fn list_stats(
-    State(state): State<AppState>,
-) -> Result<Json<StatsResponse>, super::RouterError> {
+async fn list_stats(state: State<AppState>) -> Result<Json<StatsResponse>, super::RouterError> {
     let models_fut = sqlx::query!(
         r#"SELECT model AS "model!: String", COUNT(*) AS count
            FROM stats WHERE model IS NOT NULL
@@ -71,15 +69,18 @@ async fn list_stats(
 }
 
 async fn filtered_stats(
-    State(state): State<AppState>,
+    state: State<AppState>,
     Path((column, name)): Path<(String, String)>,
 ) -> Result<Json<StatsResponse>, super::RouterError> {
-    let filter_col = match column.as_str() {
-        "model" | "country" | "version" | "carrier" => column.as_str(),
+    let filter_col: &'static str = match column.as_str() {
+        "model" => "model",
+        "country" => "country",
+        "version" => "version",
+        "carrier" => "carrier",
         _ => return Err(super::RouterError::BadRequest("invalid filter column")),
     };
 
-    let group_by = |group_col: &str| {
+    let group_by = |group_col: &'static str| {
         format!(
             "SELECT {group_col}, COUNT(*) FROM stats \
              WHERE {group_col} IS NOT NULL AND {filter_col} = ? \
@@ -103,14 +104,13 @@ async fn filtered_stats(
             .fetch_one(&state.pool),
     )?;
 
-    let to_map = |rows: Vec<(String, i64)>| -> HashMap<String, usize> {
-        rows.into_iter().map(|(k, c)| (k, c as usize)).collect()
-    };
-
     Ok(Json(StatsResponse {
-        model: to_map(models),
-        country: to_map(countries),
-        version: to_map(versions),
+        model: models.into_iter().map(|(k, c)| (k, c as usize)).collect(),
+        country: countries
+            .into_iter()
+            .map(|(k, c)| (k, c as usize))
+            .collect(),
+        version: versions.into_iter().map(|(k, c)| (k, c as usize)).collect(),
         total: total as usize,
     }))
 }
@@ -130,8 +130,8 @@ static OFFICIAL_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"-(?:UNOFFICIAL|unofficial)").unwrap());
 
 async fn create_stat(
-    State(state): State<AppState>,
-    Json(mut input): Json<StatInput>,
+    state: State<AppState>,
+    mut input: Json<StatInput>,
 ) -> Result<&'static str, super::RouterError> {
     let banned_version: Option<i64> = sqlx::query_scalar!(
         "SELECT 1 FROM banned WHERE version = ? LIMIT 1",
