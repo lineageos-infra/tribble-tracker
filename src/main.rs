@@ -2,6 +2,7 @@ use axum::Router;
 use std::env;
 use std::net::SocketAddr;
 use tokio::signal;
+use tower_http::services::{ServeDir, ServeFile};
 
 pub mod router;
 use crate::router::api::api_router;
@@ -20,9 +21,13 @@ async fn main() -> Result<(), sqlx::Error> {
 
     let state = AppState { pool };
 
+    // Production Path, use vite directly in development
+    let client = ServeDir::new("client").fallback(ServeFile::new("client/index.html"));
+
     let app = Router::new()
         .nest("/api/v1", api_router())
         .nest("/internal", internal_router())
+        .fallback_service(client)
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;

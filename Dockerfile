@@ -14,9 +14,18 @@ RUN cargo chef cook --recipe-path recipe.json
 COPY . .
 RUN cargo build --release
 
+FROM node:24-alpine AS client
+RUN npm install -g pnpm
+WORKDIR /client
+COPY client/package.json client/pnpm-lock.yaml client/pnpm-workspace.yaml .
+RUN pnpm install --frozen-lockfile
+COPY client .
+RUN pnpm build
+
 FROM alpine
 RUN apk add --no-cache curl build-base tmux sqlite
 WORKDIR /app
 COPY --from=builder /app/target/release/tribble-tracker-rs /app/tribble-tracker-rs
 COPY migrations /app/migrations
+COPY --from=client /client/dist /app/client
 ENTRYPOINT ["/app/tribble-tracker-rs"]
