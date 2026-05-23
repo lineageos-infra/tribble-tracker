@@ -22,6 +22,7 @@ struct StatsResponse {
     model: IndexMap<String, usize>,
     country: IndexMap<String, usize>,
     version: IndexMap<String, usize>,
+    carrier: IndexMap<String, usize>,
     total: usize,
 }
 
@@ -48,10 +49,22 @@ async fn list_stats(state: State<AppState>) -> Result<Json<StatsResponse>, super
     )
     .fetch_all(&state.pool);
 
+    let carriers_fut = sqlx::query!(
+        r#"SELECT carrier AS "carrier!: String", COUNT(*) AS count
+           FROM stats WHERE carrier IS NOT NULL AND carrier != ''
+           GROUP BY carrier ORDER BY count DESC LIMIT 250"#
+    )
+    .fetch_all(&state.pool);
+
     let total_fut = sqlx::query_scalar!(r#"SELECT COUNT(*) FROM stats"#).fetch_one(&state.pool);
 
-    let (models, countries, versions, total) =
-        tokio::try_join!(models_fut, countries_fut, versions_fut, total_fut)?;
+    let (models, countries, versions, carriers, total) = tokio::try_join!(
+        models_fut,
+        countries_fut,
+        versions_fut,
+        carriers_fut,
+        total_fut
+    )?;
 
     Ok(Json(StatsResponse {
         model: models
@@ -65,6 +78,10 @@ async fn list_stats(state: State<AppState>) -> Result<Json<StatsResponse>, super
         version: versions
             .into_iter()
             .map(|r| (r.version, r.count as usize))
+            .collect(),
+        carrier: carriers
+            .into_iter()
+            .map(|r| (r.carrier, r.count as usize))
             .collect(),
         total: total as usize,
     }))
@@ -92,7 +109,7 @@ async fn filtered_stats(
     let group_by = |group_col: &'static str| {
         format!(
             "SELECT {group_col}, COUNT(*) FROM stats \
-             WHERE {group_col} IS NOT NULL AND {filter_col} = ? \
+             WHERE {group_col} IS NOT NULL AND {group_col} != '' AND {filter_col} = ? \
              GROUP BY {group_col} ORDER BY 2 DESC LIMIT 250"
         )
     };
@@ -104,10 +121,11 @@ async fn filtered_stats(
             .fetch_all(&state.pool)
     };
 
-    let (models, countries, versions, total) = tokio::try_join!(
+    let (models, countries, versions, carriers, total) = tokio::try_join!(
         group_fut(group_by("model")),
         group_fut(group_by("country")),
         group_fut(group_by("version")),
+        group_fut(group_by("carrier")),
         sqlx::query_scalar::<_, i64>(AssertSqlSafe(total_sql).into_sql_str())
             .bind(&name)
             .fetch_one(&state.pool),
@@ -120,6 +138,7 @@ async fn filtered_stats(
             .map(|(k, c)| (k, c as usize))
             .collect(),
         version: versions.into_iter().map(|(k, c)| (k, c as usize)).collect(),
+        carrier: carriers.into_iter().map(|(k, c)| (k, c as usize)).collect(),
         total: total as usize,
     }))
 }
