@@ -7,10 +7,12 @@ SPDX-License-Identifier: Apache-2.0
 <script setup lang="ts">
 import type { FilterColumn } from '@/api/types'
 import { formatColumnLabel, formatFilterValue } from '@/utils/format'
+import type { RouteLocationRaw } from 'vue-router'
 
 const props = defineProps<{
   column: FilterColumn
   name: string
+  clearTo: RouteLocationRaw
 }>()
 </script>
 
@@ -21,7 +23,7 @@ const props = defineProps<{
     <span class="font-medium">{{ formatFilterValue(props.column, props.name) }}</span>
     <span class="text-xs text-brand-primary/75">{{ formatColumnLabel(props.column) }}</span>
     <RouterLink
-      to="/"
+      :to="props.clearTo"
       class="grid h-6 w-6 place-items-center rounded-full text-brand-primary hover:bg-brand-primary/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
       aria-label="Clear filter"
     >

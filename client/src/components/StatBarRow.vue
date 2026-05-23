@@ -6,8 +6,10 @@ SPDX-License-Identifier: Apache-2.0
 
 <script setup lang="ts">
 import type { FilterColumn } from '@/api/types'
+import { routeForFilterSelection } from '@/utils/filters'
 import { countryFlag, countryName, formatNumber } from '@/utils/format'
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
 const props = defineProps<{
   rank: number
@@ -33,11 +35,13 @@ const displaySecondary = computed(() => {
 })
 
 const flag = computed(() => (props.column === 'country' ? countryFlag(props.name) : null))
+const route = useRoute()
+const target = computed(() => routeForFilterSelection(route, { column: props.column, name: props.name }))
 </script>
 
 <template>
   <RouterLink
-    :to="`/${column}/${encodeURIComponent(name)}`"
+    :to="target"
     class="group relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
   >
     <span

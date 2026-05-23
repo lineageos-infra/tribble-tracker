@@ -16,14 +16,22 @@ const router = createRouter({
       component: OverviewPage
     },
     {
-      path: '/:column/:name',
+      path: '/filter',
       name: 'filter',
       component: FilterPage,
       beforeEnter: (to) => {
-        const col = to.params.column as string
-        if (!FILTER_COLUMNS.includes(col as never)) {
-          return { name: 'overview' }
-        }
+        const valid = FILTER_COLUMNS.some(
+          (column) => typeof to.query[column] === 'string' && to.query[column]
+        )
+        if (!valid) return { name: 'overview' }
+      }
+    },
+    {
+      path: '/:column/:name',
+      redirect: (to) => {
+        const column = String(to.params.column)
+        const name = String(to.params.name)
+        return { name: 'filter', query: { [column]: name } }
       }
     }
   ]
