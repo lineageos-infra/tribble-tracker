@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import type { FilterColumn, StatsResponse } from './types'
 
 async function request<T>(url: string): Promise<T> {

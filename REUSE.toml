@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: The LineageOS Project
+# SPDX-License-Identifier: Apache-2.0
+
+version = 1
+SPDX-PackageName = "tribble-tracker-rs"
+SPDX-PackageSupplier = "The LineageOS Project"
+SPDX-PackageDownloadLocation = "https://github.com/lineageos-infra/tribble-tracker-rs"
+
+[[annotations]]
+path = [
+    ".github/workflows/**",
+    ".gitignore",
+    "client/.gitignore",
+    ".dockerignore",
+    ".sqlx/**",
+    ".vscode/**",
+    "client/public/**",
+    "client/src/assets/**",
+    "Cargo.lock",
+    "README.md",
+    "client/README.md",
+    "client/.prettierrc.json",
+    "client/package.json",
+    "client/pnpm-lock.yaml",
+    "client/tsconfig*.json",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "The LineageOS Project"
+SPDX-License-Identifier = "Apache-2.0"

@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 The LineageOS Project
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 <script setup lang="ts">
 import navbarLogo from '@/assets/navbar-logo.svg'
 

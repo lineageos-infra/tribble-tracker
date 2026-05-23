@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { FILTER_COLUMNS } from '@/api/types'
 import FilterPage from '@/pages/FilterPage.vue'
 import OverviewPage from '@/pages/OverviewPage.vue'

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 The LineageOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 name = "tribble-tracker-rs"
 version = "0.1.0"

@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 The LineageOS Project
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 <script setup lang="ts">
 import { isFilterColumn, type FilterColumn } from '@/api/types'
 import FilterChip from '@/components/FilterChip.vue'

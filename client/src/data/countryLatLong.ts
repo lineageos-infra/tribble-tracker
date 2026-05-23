@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 export const COUNTRY_LAT_LONG: Record<string, [number, number]> = {
   AD: [42.5, 1.5],
   AE: [24.0, 54.0],

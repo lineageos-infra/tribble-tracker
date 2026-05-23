@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 const numberFormatter = new Intl.NumberFormat('en-US')
 
 export function formatNumber(n: number): string {

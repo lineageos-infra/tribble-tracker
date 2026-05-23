@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { fileURLToPath, URL } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'

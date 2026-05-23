@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2026 The LineageOS Project
+--
+-- SPDX-License-Identifier: Apache-2.0
+
 CREATE TABLE IF NOT EXISTS stats (
     device_id TEXT NOT NULL,
     model TEXT,

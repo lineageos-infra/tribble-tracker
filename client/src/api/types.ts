@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 export interface StatsResponse {
   model: Record<string, number>
   country: Record<string, number>

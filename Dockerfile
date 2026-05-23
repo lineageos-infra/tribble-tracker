@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 The LineageOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
 FROM rust:1.95-alpine3.23 AS chef
 USER root
 RUN cargo install --locked cargo-chef

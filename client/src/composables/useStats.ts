@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { getFilteredStats, getStats } from '@/api/client'
 import type { FilterColumn, StatsResponse } from '@/api/types'
 import { useAsyncState } from '@vueuse/core'
