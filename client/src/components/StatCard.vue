@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 <script setup lang="ts">
 import type { FilterColumn } from '@/api/types'
-import { formatNumber } from '@/utils/format'
+import { countryName, formatNumber } from '@/utils/format'
 import { computed, ref } from 'vue'
 import StatBarRow from './StatBarRow.vue'
 
@@ -27,7 +27,14 @@ const max = computed(() => list.value.reduce((m, [, c]) => Math.max(m, c), 0))
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
   if (!q) return list.value
-  return list.value.filter(([k]) => k.toLowerCase().includes(q))
+  return list.value.filter(([k]) => {
+    if (k.toLowerCase().includes(q)) return true
+    if (props.column === 'country') {
+      const name = countryName(k)
+      if (name && name.toLowerCase().includes(q)) return true
+    }
+    return false
+  })
 })
 </script>
 
