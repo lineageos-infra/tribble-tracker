@@ -18,17 +18,15 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div
-    class="inline-flex items-center gap-2 rounded-full border border-brand-primary/30 bg-brand-primary/10 py-1.5 pr-1.5 pl-3 text-sm text-brand-primary"
+  <RouterLink
+    :to="props.clearTo"
+    :aria-label="`Clear ${formatColumnLabel(props.column)} filter: ${formatFilterValue(props.column, props.name)}`"
+    class="inline-flex h-8 items-center gap-2 rounded-lg bg-brand-light pr-2 pl-4 text-sm leading-5 font-medium text-brand-dark transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary hover:brightness-95 active:brightness-90 dark:bg-brand-dark dark:text-brand-light dark:hover:brightness-110 dark:active:brightness-125"
   >
-    <span class="font-medium">{{ formatFilterValue(props.column, props.name) }}</span>
-    <span class="text-xs text-brand-primary/75">{{ formatColumnLabel(props.column) }}</span>
-    <RouterLink
-      :to="props.clearTo"
-      class="grid h-6 w-6 place-items-center rounded-full text-brand-primary hover:bg-brand-primary/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
-      aria-label="Clear filter"
-    >
-      <X class="size-3.5" :stroke-width="2.5" />
-    </RouterLink>
-  </div>
+    <span class="font-normal text-brand-dark/70 uppercase dark:text-brand-light/70">{{
+      formatColumnLabel(props.column)
+    }}</span>
+    <span>{{ formatFilterValue(props.column, props.name) }}</span>
+    <X class="size-4.5" :stroke-width="2" aria-hidden="true" />
+  </RouterLink>
 </template>
