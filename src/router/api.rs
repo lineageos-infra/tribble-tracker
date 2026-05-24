@@ -20,7 +20,7 @@ pub fn api_router() -> Router<AppState> {
         .route("/stats/filter", get(filtered_stats))
 }
 
-#[derive(Deserialize, Clone, Hash)]
+#[derive(Deserialize, Clone, Hash, PartialEq, Eq)]
 struct FilterQuery {
     #[serde(default)]
     model: Option<String>,
@@ -211,14 +211,8 @@ async fn filtered_stats(
 #[cached(
     result = true,
     ttl = 3600,
-    key = "u64",
-    convert = r#"{
-        use std::hash::{Hash, Hasher};
-        use std::collections::hash_map::DefaultHasher;
-        let mut h = DefaultHasher::new();
-        query.hash(&mut h);
-        h.finish()
-    }"#
+    key = "FilterQuery",
+    convert = r#"{ query.clone() }"#
 )]
 async fn filtered_stats_inner(
     state: AppState,
