@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { StatsResponse } from './types'
 import type { ActiveFilter } from '@/utils/filters'
+import type { StatsResponse } from './types'
 
 async function request<T>(url: string): Promise<T> {
   const res = await fetch(url)
