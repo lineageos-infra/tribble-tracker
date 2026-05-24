@@ -16,7 +16,7 @@ use std::sync::LazyLock;
 
 pub fn api_router() -> Router<AppState> {
     Router::new()
-        .route("/stats", get(list_stats).post(create_stat))
+        .route("/stats", get(filtered_stats).post(create_stat))
         .route("/stats/filter", get(filtered_stats))
 }
 
@@ -140,73 +140,6 @@ struct StatsResponse {
     total: usize,
 }
 
-async fn list_stats(
-    State(state): State<AppState>,
-) -> Result<Json<StatsResponse>, super::RouterError> {
-    list_stats_inner(state).await
-}
-
-#[cached(result = true, ttl = 3600, key = "()", convert = r#"{ () }"#)]
-async fn list_stats_inner(state: AppState) -> Result<Json<StatsResponse>, super::RouterError> {
-    let models_fut = sqlx::query!(
-        r#"SELECT model AS "model!: String", COUNT(*) AS count
-           FROM stats WHERE model IS NOT NULL
-           GROUP BY model ORDER BY count DESC LIMIT 250"#
-    )
-    .fetch_all(&state.pool);
-
-    let countries_fut = sqlx::query!(
-        r#"SELECT country AS "country!: String", COUNT(*) AS count
-           FROM stats WHERE country IS NOT NULL
-           GROUP BY country ORDER BY count DESC LIMIT 250"#
-    )
-    .fetch_all(&state.pool);
-
-    let versions_fut = sqlx::query!(
-        r#"SELECT version AS "version!: String", COUNT(*) AS count
-           FROM stats WHERE version IS NOT NULL
-           GROUP BY version ORDER BY count DESC LIMIT 250"#
-    )
-    .fetch_all(&state.pool);
-
-    let carriers_fut = sqlx::query!(
-        r#"SELECT carrier AS "carrier!: String", COUNT(*) AS count
-           FROM stats WHERE carrier IS NOT NULL AND carrier != ''
-           GROUP BY carrier ORDER BY count DESC LIMIT 250"#
-    )
-    .fetch_all(&state.pool);
-
-    let total_fut = sqlx::query_scalar!(r#"SELECT COUNT(*) FROM stats"#).fetch_one(&state.pool);
-
-    let (models, countries, versions, carriers, total) = tokio::try_join!(
-        models_fut,
-        countries_fut,
-        versions_fut,
-        carriers_fut,
-        total_fut
-    )?;
-
-    Ok(Json(StatsResponse {
-        model: models
-            .into_iter()
-            .map(|r| (r.model, r.count as usize))
-            .collect(),
-        country: countries
-            .into_iter()
-            .map(|r| (r.country, r.count as usize))
-            .collect(),
-        version: versions
-            .into_iter()
-            .map(|r| (r.version, r.count as usize))
-            .collect(),
-        carrier: carriers
-            .into_iter()
-            .map(|r| (r.carrier, r.count as usize))
-            .collect(),
-        total: total as usize,
-    }))
-}
-
 async fn filtered_stats(
     State(state): State<AppState>,
     Query(query): Query<FilterQuery>,
@@ -225,10 +158,6 @@ async fn filtered_stats_inner(
     query: FilterQuery,
 ) -> Result<Json<StatsResponse>, super::RouterError> {
     let filters = query.into_filters();
-
-    if filters.is_empty() {
-        return list_stats(State(state)).await;
-    }
 
     let (models, countries, versions, carriers, total) = tokio::try_join!(
         fetch_filtered_counts(&state, GroupCol::Model, &filters),
