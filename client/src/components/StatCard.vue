@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 <script setup lang="ts">
 import type { FilterColumn } from '@/api/types'
 import { countryName, formatNumber } from '@/utils/format'
+import { Search } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import StatBarRow from './StatBarRow.vue'
 
@@ -49,17 +50,10 @@ const filtered = computed(() => {
 
     <label class="relative mb-3 block px-1">
       <span class="sr-only">Filter {{ title }}</span>
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        class="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-on-surface-muted"
+      <Search
+        class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-on-surface-muted"
         aria-hidden="true"
-      >
-        <circle cx="11" cy="11" r="7" />
-        <path d="M21 21l-4.3-4.3" stroke-linecap="round" />
-      </svg>
+      />
       <input
         v-model="query"
         type="search"

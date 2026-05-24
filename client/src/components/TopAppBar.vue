@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 <script setup lang="ts">
 import navbarLogo from '@/assets/navbar-logo.svg'
+import { ExternalLink } from '@lucide/vue'
 </script>
 
 <template>
@@ -28,20 +29,7 @@ import navbarLogo from '@/assets/navbar-logo.svg'
           class="hidden items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium text-on-surface-muted uppercase focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary md:inline-flex"
         >
           lineageos.org
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="size-4"
-            aria-hidden="true"
-          >
-            <path d="M14 4h6v6" />
-            <path d="M20 4L10 14" />
-            <path d="M19 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h6" />
-          </svg>
+          <ExternalLink class="size-4" aria-hidden="true" />
         </a>
       </div>
     </div>

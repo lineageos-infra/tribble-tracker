@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@fontsource/roboto": "^5.2.10",
+    "@lucide/vue": "^1.16.0",
     "@tailwindcss/vite": "^4.3.0",
     "@unovis/ts": "^1.6.5",
     "@unovis/vue": "^1.6.5",
