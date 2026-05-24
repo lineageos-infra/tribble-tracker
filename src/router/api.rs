@@ -302,8 +302,18 @@ async fn create_stat(
     }
 
     sqlx::query!(
-        "INSERT INTO stats (device_id, carrier, carrier_id, country, model, official, version, version_raw)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        r#"
+        INSERT INTO stats (device_id, carrier, carrier_id, country, model, official, version, version_raw)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(device_id) DO UPDATE SET
+            carrier = excluded.carrier,
+            carrier_id = excluded.carrier_id,
+            country = excluded.country,
+            model = excluded.model,
+            official = excluded.official,
+            version = excluded.version,
+            version_raw = excluded.version_raw
+        "#,
         input.device_id,
         input.carrier,
         input.carrier_id,
