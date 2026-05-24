@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 <script setup lang="ts">
 import type { FilterColumn } from '@/api/types'
 import { formatColumnLabel, formatFilterValue } from '@/utils/format'
+import { X } from '@lucide/vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 const props = defineProps<{
@@ -27,15 +28,7 @@ const props = defineProps<{
       class="grid h-6 w-6 place-items-center rounded-full text-brand-primary hover:bg-brand-primary/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
       aria-label="Clear filter"
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        class="h-3.5 w-3.5"
-      >
-        <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
-      </svg>
+      <X class="size-3.5" :stroke-width="2.5" />
     </RouterLink>
   </div>
 </template>
