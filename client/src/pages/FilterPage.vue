@@ -28,7 +28,7 @@ const GRID_COLS = [
 
 const route = useRoute()
 const filters = computed(() => filtersFromRoute(route))
-const { data, loading, error } = useStats(() => (filters.value.length ? filters.value : null))
+const { data, loading, error } = useStats(() => filters.value)
 
 const filteredColumns = computed(() => new Set(filters.value.map((f) => f.column)))
 

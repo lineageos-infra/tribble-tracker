@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { getFilteredStats, getStats } from '@/api/client'
+import { getFilteredStats } from '@/api/client'
 import type { StatsResponse } from '@/api/types'
 import type { ActiveFilter } from '@/utils/filters'
 import { useAsyncState } from '@vueuse/core'
@@ -12,7 +12,7 @@ export function useStats(filter?: () => ActiveFilter[] | null) {
   const { state, isLoading, error, execute } = useAsyncState<
     StatsResponse | null,
     [ActiveFilter[] | null]
-  >((f) => (f?.length ? getFilteredStats(f) : getStats()), null, { immediate: false })
+  >((f) => getFilteredStats(f ?? []), null, { immediate: false })
 
   watch(
     () => filter?.() ?? null,

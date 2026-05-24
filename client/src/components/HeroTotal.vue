@@ -12,7 +12,6 @@ import { computed, toRef } from 'vue'
 const props = defineProps<{
   label: string
   value: number
-  sublabel?: string
 }>()
 
 const tweened = useTransition(toRef(props, 'value'), {
