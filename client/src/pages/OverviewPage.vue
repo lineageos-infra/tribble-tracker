@@ -16,7 +16,7 @@ const { data, loading, error } = useStats()
 </script>
 
 <template>
-  <div class="mx-auto flex max-w-7xl flex-col gap-6">
+  <div class="mx-auto flex w-full max-w-7xl flex-col gap-6">
     <HeroTotal label="Total active installs" :value="data?.total ?? 0" />
 
     <p

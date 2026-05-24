@@ -45,7 +45,7 @@ const visibleCards = computed(() => {
 </script>
 
 <template>
-  <div class="mx-auto flex max-w-7xl flex-col gap-6">
+  <div class="mx-auto flex w-full max-w-7xl flex-col gap-6">
     <header class="flex flex-col gap-3 px-1">
       <div v-if="filters.length" class="flex flex-wrap gap-2">
         <FilterChip

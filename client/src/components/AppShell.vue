@@ -12,7 +12,7 @@ import TopAppBar from './TopAppBar.vue'
 <template>
   <div class="flex min-h-dvh flex-col bg-surface text-on-surface">
     <TopAppBar />
-    <main class="flex-1 px-4 py-6 sm:px-8 sm:py-10">
+    <main class="flex flex-1 flex-col px-4 py-6 sm:px-8 sm:py-10">
       <slot />
     </main>
     <AppFooter />

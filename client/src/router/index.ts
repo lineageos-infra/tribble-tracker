@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import Error404Page from '@/pages/Error404Page.vue'
 import FilterPage from '@/pages/FilterPage.vue'
 import OverviewPage from '@/pages/OverviewPage.vue'
 import { filtersFromRoute } from '@/utils/filters'
@@ -22,6 +23,11 @@ const router = createRouter({
       beforeEnter: (to) => {
         if (!filtersFromRoute(to).length) return { name: 'overview' }
       }
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: '404',
+      component: Error404Page
     }
   ]
 })
