@@ -5,7 +5,7 @@
  */
 
 @import 'tailwindcss';
-@import '@fontsource/roboto';
+@import '@fontsource-variable/roboto-flex';
 
 :root {
   color-scheme: light;
@@ -14,7 +14,7 @@
   --color-brand-dark: #324b4c;
   --color-brand-primary: #167c80;
 
-  --font-sans: 'Roboto', sans-serif;
+  --font-sans: 'Roboto Flex Variable', sans-serif;
 
   /* Light theme neutrals */
   --color-surface: #fafafa;
