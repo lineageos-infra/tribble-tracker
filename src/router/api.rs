@@ -140,8 +140,14 @@ struct StatsResponse {
     total: usize,
 }
 
+async fn list_stats(
+    State(state): State<AppState>,
+) -> Result<Json<StatsResponse>, super::RouterError> {
+    list_stats_inner(state).await
+}
+
 #[cached(result = true, ttl = 3600, key = "()", convert = r#"{ () }"#)]
-async fn list_stats(state: State<AppState>) -> Result<Json<StatsResponse>, super::RouterError> {
+async fn list_stats_inner(state: AppState) -> Result<Json<StatsResponse>, super::RouterError> {
     let models_fut = sqlx::query!(
         r#"SELECT model AS "model!: String", COUNT(*) AS count
            FROM stats WHERE model IS NOT NULL
