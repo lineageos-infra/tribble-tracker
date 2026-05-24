@@ -46,7 +46,6 @@ pub async fn refresh_banned(db: &Database, cache: &BannedCache) -> Result<(), Db
 pub fn spawn_banned_refresh(db: Database, banned: BannedCache) {
     tokio::spawn(async move {
         let mut ticker = tokio::time::interval(std::time::Duration::from_secs(60));
-        ticker.tick().await; // skip the immediate tick — we just loaded
         loop {
             ticker.tick().await;
             if let Err(e) = refresh_banned(&db, &banned).await {
