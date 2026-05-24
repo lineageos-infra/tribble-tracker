@@ -149,6 +149,7 @@ async fn filtered_stats(
 
 #[cached(
     result = true,
+    size = 1000,
     ttl = 3600,
     key = "FilterQuery",
     convert = r#"{ query.clone() }"#
