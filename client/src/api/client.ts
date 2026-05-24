@@ -13,12 +13,8 @@ async function request<T>(url: string): Promise<T> {
   return (await res.json()) as T
 }
 
-export function getStats(): Promise<StatsResponse> {
-  return request<StatsResponse>('/api/v1/stats')
-}
-
 export function getFilteredStats(filters: ActiveFilter[]): Promise<StatsResponse> {
-  if (!filters.length) return getStats()
+  if (!filters.length) return request<StatsResponse>('/api/v1/stats')
 
   const query = new URLSearchParams()
   for (const filter of filters) {

@@ -36,14 +36,13 @@ const { data, loading, error } = useStats()
 
     <template v-else-if="data">
       <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard :title="FILTER_TITLES.model" column="model" :entries="data.model" />
-        <StatCard :title="FILTER_TITLES.country" column="country" :entries="data.country" />
-        <StatCard :title="FILTER_TITLES.version" column="version" :entries="data.version" />
         <StatCard
-          v-if="data.carrier && Object.keys(data.carrier).length"
-          :title="FILTER_TITLES.carrier"
-          column="carrier"
-          :entries="data.carrier"
+          v-for="column in FILTER_COLUMNS"
+          v-show="Object.keys(data[column]).length"
+          :key="column"
+          :title="FILTER_TITLES[column]"
+          :column="column"
+          :entries="data[column]"
         />
       </div>
       <CountryMap :entries="data.country" :total="data.total" />

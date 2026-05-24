@@ -9,7 +9,7 @@ import { COUNTRY_LAT_LONG } from '@/data/countryLatLong'
 import { countryFlag, countryName, formatNumber } from '@/utils/format'
 import { VisLeafletMap } from '@unovis/vue'
 import { useMediaQuery, usePreferredDark } from '@vueuse/core'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 
 interface Point {
   id: string
@@ -59,23 +59,6 @@ const pointRadius = (d: Point) => {
 
 const isDark = usePreferredDark()
 const isSmUp = useMediaQuery('(min-width: 640px)')
-const mapHeight = computed(() => (isSmUp.value ? 520 : 460))
-const tileStyle = computed(() =>
-  isDark.value
-    ? 'https://tiles.openfreemap.org/styles/dark'
-    : 'https://tiles.openfreemap.org/styles/positron'
-)
-const pointColor = computed(() =>
-  isDark.value ? 'rgba(204, 232, 233, 0.65)' : 'rgba(22, 124, 128, 0.65)'
-)
-const clusterColor = computed(() =>
-  isDark.value ? 'rgba(204, 232, 233, 0.75)' : 'rgba(22, 124, 128, 0.75)'
-)
-
-const pointId = (d: Point) => d.id
-const pointLat = (d: Point) => d.latitude
-const pointLng = (d: Point) => d.longitude
-const pointLabel = (d: Point) => formatNumber(d.count)
 
 // unovis VisTooltip doesn't wire into the HTML-based LeafletMap, so delegate
 // mouse events on the rendered marker paths and render our own tooltip.
@@ -121,16 +104,6 @@ function handleMove(e: MouseEvent) {
 function handleLeave() {
   tooltipPoint.value = null
 }
-
-onMounted(() => {
-  mapWrapper.value?.addEventListener('mousemove', handleMove)
-  mapWrapper.value?.addEventListener('mouseleave', handleLeave)
-})
-
-onBeforeUnmount(() => {
-  mapWrapper.value?.removeEventListener('mousemove', handleMove)
-  mapWrapper.value?.removeEventListener('mouseleave', handleLeave)
-})
 </script>
 
 <template>
@@ -143,20 +116,25 @@ onBeforeUnmount(() => {
         </p>
       </div>
     </header>
-    <div ref="mapWrapper" class="map-container relative w-full overflow-hidden rounded-3xl">
+    <div
+      ref="mapWrapper"
+      class="map-container relative w-full overflow-hidden rounded-3xl"
+      @mousemove="handleMove"
+      @mouseleave="handleLeave"
+    >
       <VisLeafletMap
         :key="isDark ? 'dark' : 'light'"
-        :height="mapHeight"
+        :height="isSmUp ? 520 : 460"
         :data="points"
-        :style="tileStyle"
-        :point-id="pointId"
-        :point-latitude="pointLat"
-        :point-longitude="pointLng"
+        :style="
+          isDark
+            ? 'https://tiles.openfreemap.org/styles/dark'
+            : 'https://tiles.openfreemap.org/styles/positron'
+        "
         :point-radius="pointRadius"
-        :point-color="pointColor"
-        :point-label="pointLabel"
-        :cluster-color="clusterColor"
-        :fit-view-on-init="true"
+        :point-color="isDark ? 'rgba(204, 232, 233, 0.65)' : 'rgba(22, 124, 128, 0.65)'"
+        :point-label="(d: Point) => formatNumber(d.count)"
+        :cluster-color="isDark ? 'rgba(204, 232, 233, 0.75)' : 'rgba(22, 124, 128, 0.75)'"
         :fit-view-padding="[40, 40]"
         :attribution="[
           `<a href=&quot;https://openfreemap.org&quot; target=&quot;_blank&quot;>OpenFreeMap</a> | <a href=&quot;https://www.openmaptiles.org/&quot; target=&quot;_blank&quot;>© OpenMapTiles</a> | <a href=&quot;https://www.openstreetmap.org/copyright&quot; target=&quot;_blank&quot;>Data from OpenStreetMap</a>`
