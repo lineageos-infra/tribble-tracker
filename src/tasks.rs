@@ -5,21 +5,16 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 
-async fn drop_old_stats(pool: &sqlx::SqlitePool) -> Result<u64, sqlx::Error> {
-    let res = sqlx::query!("DELETE FROM stats WHERE submit_time < datetime('now', '-90 days')")
-        .execute(pool)
-        .await?;
-    Ok(res.rows_affected())
-}
+use crate::database::{Database, DbError};
 
-pub fn spawn_stats_cleanup(pool: sqlx::SqlitePool) {
+pub fn spawn_stats_cleanup(db: Database) {
     tokio::spawn(async move {
         let mut ticker = tokio::time::interval(std::time::Duration::from_secs(24 * 60 * 60));
         loop {
             ticker.tick().await;
-            match drop_old_stats(&pool).await {
+            match db.delete_old_stats().await {
                 Ok(n) => println!("dropped {n} old stats rows"),
-                Err(e) => eprintln!("drop_old_stats failed: {e:?}"),
+                Err(e) => eprintln!("delete_old_stats failed: {e:?}"),
             }
         }
     });
@@ -33,13 +28,8 @@ pub struct Banned {
 
 pub type BannedCache = Arc<RwLock<Banned>>;
 
-pub async fn refresh_banned(
-    pool: &sqlx::SqlitePool,
-    cache: &BannedCache,
-) -> Result<(), sqlx::Error> {
-    let rows = sqlx::query!("SELECT version, model FROM banned")
-        .fetch_all(pool)
-        .await?;
+pub async fn refresh_banned(db: &Database, cache: &BannedCache) -> Result<(), DbError> {
+    let rows = db.list_bans().await?;
     let mut next = Banned::default();
     for r in rows {
         if let Some(v) = r.version {
@@ -53,13 +43,13 @@ pub async fn refresh_banned(
     Ok(())
 }
 
-pub fn spawn_banned_refresh(pool: sqlx::SqlitePool, banned: BannedCache) {
+pub fn spawn_banned_refresh(db: Database, banned: BannedCache) {
     tokio::spawn(async move {
         let mut ticker = tokio::time::interval(std::time::Duration::from_secs(60));
         ticker.tick().await; // skip the immediate tick — we just loaded
         loop {
             ticker.tick().await;
-            if let Err(e) = refresh_banned(&pool, &banned).await {
+            if let Err(e) = refresh_banned(&db, &banned).await {
                 eprintln!("failed to refresh banned list: {e:?}");
             }
         }

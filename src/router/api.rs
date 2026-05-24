@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::AppState;
+use crate::database::{FilterClause, GroupCol, NewStat};
 use axum::{
     Json, Router,
     extract::{Query, State},
@@ -32,103 +33,37 @@ struct FilterQuery {
     carrier: Option<String>,
 }
 
-#[derive(Clone)]
-struct FilterClause {
-    column: &'static str,
-    name: String,
-}
-
 impl FilterQuery {
-    fn into_filters(self) -> Vec<FilterClause> {
+    fn to_filters(&self) -> Vec<FilterClause<'_>> {
         let mut filters = Vec::new();
 
-        if let Some(name) = self.model {
+        if let Some(name) = &self.model {
             filters.push(FilterClause {
                 column: "model",
-                name,
+                value: name,
             });
         }
-        if let Some(name) = self.country {
+        if let Some(name) = &self.country {
             filters.push(FilterClause {
                 column: "country",
-                name,
+                value: name,
             });
         }
-        if let Some(name) = self.version {
+        if let Some(name) = &self.version {
             filters.push(FilterClause {
                 column: "version",
-                name,
+                value: name,
             });
         }
-        if let Some(name) = self.carrier {
+        if let Some(name) = &self.carrier {
             filters.push(FilterClause {
                 column: "carrier",
-                name,
+                value: name,
             });
         }
 
         filters
     }
-}
-
-#[derive(Clone, Copy)]
-enum GroupCol {
-    Model,
-    Country,
-    Version,
-    Carrier,
-}
-
-impl GroupCol {
-    fn as_str(self) -> &'static str {
-        match self {
-            Self::Model => "model",
-            Self::Country => "country",
-            Self::Version => "version",
-            Self::Carrier => "carrier",
-        }
-    }
-}
-
-async fn fetch_filtered_counts(
-    state: &AppState,
-    group_col: GroupCol,
-    filters: &[FilterClause],
-) -> Result<Vec<(String, i64)>, sqlx::Error> {
-    let col = group_col.as_str();
-    let mut qb = sqlx::QueryBuilder::new(format!(
-        "SELECT {col}, COUNT(*) FROM stats WHERE {col} IS NOT NULL AND {col} != ''"
-    ));
-    for filter in filters {
-        qb.push(" AND ")
-            .push(filter.column)
-            .push(" = ")
-            .push_bind(&filter.name);
-    }
-    qb.push(format!(" GROUP BY {col} ORDER BY 2 DESC LIMIT 250"));
-    qb.build_query_as::<(String, i64)>()
-        .fetch_all(&state.pool)
-        .await
-}
-
-async fn fetch_filtered_total(
-    state: &AppState,
-    filters: &[FilterClause],
-) -> Result<i64, sqlx::Error> {
-    let mut qb = sqlx::QueryBuilder::new("SELECT COUNT(*) FROM stats");
-
-    if !filters.is_empty() {
-        qb.push(" WHERE ");
-        let mut separated = qb.separated(" AND ");
-        for filter in filters {
-            separated
-                .push(filter.column)
-                .push_unseparated(" = ")
-                .push_bind_unseparated(&filter.name);
-        }
-    }
-
-    qb.build_query_scalar::<i64>().fetch_one(&state.pool).await
 }
 
 #[derive(Serialize, Clone)]
@@ -158,14 +93,14 @@ async fn filtered_stats_inner(
     state: AppState,
     query: FilterQuery,
 ) -> Result<Json<StatsResponse>, super::RouterError> {
-    let filters = query.into_filters();
+    let filters = query.to_filters();
 
     let (models, countries, versions, carriers, total) = tokio::try_join!(
-        fetch_filtered_counts(&state, GroupCol::Model, &filters),
-        fetch_filtered_counts(&state, GroupCol::Country, &filters),
-        fetch_filtered_counts(&state, GroupCol::Version, &filters),
-        fetch_filtered_counts(&state, GroupCol::Carrier, &filters),
-        fetch_filtered_total(&state, &filters),
+        state.db.fetch_grouped_counts(GroupCol::Model, &filters),
+        state.db.fetch_grouped_counts(GroupCol::Country, &filters),
+        state.db.fetch_grouped_counts(GroupCol::Version, &filters),
+        state.db.fetch_grouped_counts(GroupCol::Carrier, &filters),
+        state.db.fetch_total(&filters),
     )?;
 
     Ok(Json(StatsResponse {
@@ -231,30 +166,19 @@ async fn create_stat(
         input.country = input.country.to_uppercase();
     }
 
-    sqlx::query!(
-        r#"
-        INSERT INTO stats (device_id, carrier, carrier_id, country, model, official, version, version_raw)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(device_id) DO UPDATE SET
-            carrier = excluded.carrier,
-            carrier_id = excluded.carrier_id,
-            country = excluded.country,
-            model = excluded.model,
-            official = excluded.official,
-            version = excluded.version,
-            version_raw = excluded.version_raw
-        "#,
-        input.device_id,
-        input.carrier,
-        input.carrier_id,
-        input.country,
-        input.name,
-        official,
-        version,
-        input.version,
-    )
-    .execute(&state.pool)
-    .await?;
+    state
+        .db
+        .upsert_stat(NewStat {
+            device_id: &input.device_id,
+            carrier: input.carrier.as_deref(),
+            carrier_id: input.carrier_id.as_deref(),
+            country: &input.country,
+            model: &input.name,
+            official,
+            version: &version,
+            version_raw: &input.version,
+        })
+        .await?;
 
     Ok("neat")
 }

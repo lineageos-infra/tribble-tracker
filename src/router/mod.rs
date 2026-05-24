@@ -7,16 +7,18 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
+use crate::database::DbError;
+
 pub mod api;
 pub mod internal;
 
 pub(super) enum RouterError {
-    Db(sqlx::Error),
+    Db(DbError),
     BadRequest(&'static str),
 }
 
-impl From<sqlx::Error> for RouterError {
-    fn from(e: sqlx::Error) -> Self {
+impl From<DbError> for RouterError {
+    fn from(e: DbError) -> Self {
         RouterError::Db(e)
     }
 }

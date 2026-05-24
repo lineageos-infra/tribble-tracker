@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::AppState;
+use crate::database::BannedItem;
 use axum::{
     Json, Router,
     extract::{ConnectInfo, Request, State},
@@ -11,7 +12,7 @@ use axum::{
     response::Response,
     routing::{get, post},
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::net::SocketAddr;
 
 pub fn internal_router() -> Router<AppState> {
@@ -34,20 +35,10 @@ async fn require_loopback(
     }
 }
 
-#[derive(Serialize)]
-struct BannedItem {
-    version: Option<String>,
-    model: Option<String>,
-    note: Option<String>,
-}
-
 async fn list_bans(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<BannedItem>>, super::RouterError> {
-    let items = sqlx::query_as!(BannedItem, r#"SELECT version, model, note FROM banned"#)
-        .fetch_all(&state.pool)
-        .await?;
-
+    let items = state.db.list_bans().await?;
     Ok(Json(items))
 }
 
@@ -65,14 +56,10 @@ async fn ban_model(
     if input.model.is_empty() {
         return Err(super::RouterError::BadRequest("model is required"));
     }
-    sqlx::query!(
-        "INSERT INTO banned (model, note) VALUES (?, ?)
-         ON CONFLICT (model) DO UPDATE SET note = excluded.note",
-        input.model,
-        input.note,
-    )
-    .execute(&state.pool)
-    .await?;
+    state
+        .db
+        .upsert_banned_model(&input.model, input.note.as_deref())
+        .await?;
     Ok("OK")
 }
 
@@ -90,13 +77,9 @@ async fn ban_version(
     if input.version.is_empty() {
         return Err(super::RouterError::BadRequest("version is required"));
     }
-    sqlx::query!(
-        "INSERT INTO banned (version, note) VALUES (?, ?)
-         ON CONFLICT (version) DO UPDATE SET note = excluded.note",
-        input.version,
-        input.note,
-    )
-    .execute(&state.pool)
-    .await?;
+    state
+        .db
+        .upsert_banned_version(&input.version, input.note.as_deref())
+        .await?;
     Ok("OK")
 }

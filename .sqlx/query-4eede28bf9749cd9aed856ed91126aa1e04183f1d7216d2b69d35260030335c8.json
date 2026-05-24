@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            INSERT INTO stats (device_id, carrier, carrier_id, country, model, official, version, version_raw)\n            VALUES (?, ?, ?, ?, ?, ?, ?, ?)\n            ON CONFLICT(device_id) DO UPDATE SET\n                carrier = excluded.carrier,\n                carrier_id = excluded.carrier_id,\n                country = excluded.country,\n                model = excluded.model,\n                official = excluded.official,\n                version = excluded.version,\n                version_raw = excluded.version_raw\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": []
+  },
+  "hash": "4eede28bf9749cd9aed856ed91126aa1e04183f1d7216d2b69d35260030335c8"
+}

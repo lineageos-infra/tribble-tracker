@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO banned (model, note) VALUES (?, ?)\n             ON CONFLICT (model) DO UPDATE SET note = excluded.note",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "5c058e78eac841bdb2b08258a00e4cc3c1b288e8018035355583b4c99674ac21"
+}
