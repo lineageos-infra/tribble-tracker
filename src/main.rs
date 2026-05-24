@@ -20,18 +20,22 @@ pub struct AppState {
     pub banned: tasks::BannedCache,
 }
 
+impl AppState {
+    pub fn new(pool: sqlx::SqlitePool) -> Self {
+        Self {
+            pool,
+            banned: Arc::new(RwLock::new(tasks::Banned::default())),
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
     let database_url = env::var("DATABASE_URL").unwrap_or("sqlite:dev.db".to_string());
     let pool = sqlx::SqlitePool::connect(&database_url).await?;
     sqlx::migrate!().run(&pool).await?;
 
-    let banned_cache: tasks::BannedCache = Arc::new(RwLock::new(tasks::Banned::default()));
-
-    let state = AppState {
-        pool,
-        banned: banned_cache,
-    };
+    let state = AppState::new(pool);
 
     // Start tasks
     tasks::spawn_stats_cleanup(state.pool.clone());
