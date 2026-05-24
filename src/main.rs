@@ -3,50 +3,46 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::Router;
-use std::env;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
-use tokio::signal;
 use tower_http::services::{ServeDir, ServeFile};
 
+pub mod database;
 pub mod router;
-use crate::router::api::api_router;
-use crate::router::internal::internal_router;
+use crate::database::Database;
+use crate::tasks::Banned;
 pub mod tasks;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub pool: sqlx::SqlitePool,
+    pub db: Database,
     pub banned: tasks::BannedCache,
 }
 
 impl AppState {
-    pub fn new(pool: sqlx::SqlitePool) -> Self {
+    pub fn new(db: Database) -> Self {
         Self {
-            pool,
-            banned: Arc::new(RwLock::new(tasks::Banned::default())),
+            db,
+            banned: Arc::new(RwLock::new(Banned::default())),
         }
     }
 }
 
 #[tokio::main]
-async fn main() -> Result<(), sqlx::Error> {
-    let database_url = env::var("DATABASE_URL").unwrap_or("sqlite:dev.db".to_string());
-    let pool = sqlx::SqlitePool::connect(&database_url).await?;
-    sqlx::migrate!().run(&pool).await?;
-
-    let state = AppState::new(pool);
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let db = Database::new().await?;
+    let state = AppState::new(db);
 
     // Start tasks
-    tasks::spawn_stats_cleanup(state.pool.clone());
-    tasks::spawn_banned_refresh(state.pool.clone(), state.banned.clone());
+    tasks::spawn_stats_cleanup(state.db.clone());
+    tasks::spawn_banned_refresh(state.db.clone(), state.banned.clone());
 
     // Production Path, use vite directly in development
     let client = ServeDir::new("client").fallback(ServeFile::new("client/index.html"));
 
     let app = Router::new()
-        .nest("/api/v1", api_router())
-        .nest("/internal", internal_router())
+        .nest("/api/v1", router::api::api_router())
+        .nest("/internal", router::internal::internal_router())
         .fallback_service(client)
         .with_state(state);
 
@@ -71,7 +67,7 @@ async fn shutdown_signal() {
 
     #[cfg(unix)]
     let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
             .expect("failed to install signal handler")
             .recv()
             .await;
