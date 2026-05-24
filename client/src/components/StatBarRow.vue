@@ -36,7 +36,9 @@ const displaySecondary = computed(() => {
 
 const flag = computed(() => (props.column === 'country' ? countryFlag(props.name) : null))
 const route = useRoute()
-const target = computed(() => routeForFilterSelection(route, { column: props.column, name: props.name }))
+const target = computed(() =>
+  routeForFilterSelection(route, { column: props.column, name: props.name })
+)
 </script>
 
 <template>

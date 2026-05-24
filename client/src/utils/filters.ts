@@ -12,9 +12,9 @@ export interface ActiveFilter {
 }
 
 export function filtersFromRoute(route: RouteLocationNormalizedLoaded): ActiveFilter[] {
-  return FILTER_COLUMNS
-    .map((column) => ({ column, name: route.query[column] }))
-    .filter((entry): entry is ActiveFilter => typeof entry.name === 'string' && entry.name.length > 0)
+  return FILTER_COLUMNS.map((column) => ({ column, name: route.query[column] })).filter(
+    (entry): entry is ActiveFilter => typeof entry.name === 'string' && entry.name.length > 0
+  )
 }
 
 export function queryFromFilters(filters: ActiveFilter[]): LocationQueryRaw {
