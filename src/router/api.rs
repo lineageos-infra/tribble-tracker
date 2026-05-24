@@ -12,7 +12,6 @@ use cached::macros::cached;
 use indexmap::IndexMap;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use sqlx::{AssertSqlSafe, SqlSafeStr};
 use std::sync::LazyLock;
 
 pub fn api_router() -> Router<AppState> {
@@ -72,50 +71,64 @@ impl FilterQuery {
     }
 }
 
-fn filter_where_clause(filters: &[FilterClause]) -> String {
-    filters
-        .iter()
-        .map(|filter| format!("{} = ?", filter.column))
-        .collect::<Vec<_>>()
-        .join(" AND ")
+#[derive(Clone, Copy)]
+enum GroupCol {
+    Model,
+    Country,
+    Version,
+    Carrier,
+}
+
+impl GroupCol {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Model => "model",
+            Self::Country => "country",
+            Self::Version => "version",
+            Self::Carrier => "carrier",
+        }
+    }
 }
 
 async fn fetch_filtered_counts(
     state: &AppState,
-    group_col: &'static str,
+    group_col: GroupCol,
     filters: &[FilterClause],
 ) -> Result<Vec<(String, i64)>, sqlx::Error> {
-    let mut sql = format!(
-        "SELECT {group_col}, COUNT(*) FROM stats WHERE {group_col} IS NOT NULL AND {group_col} != ''"
-    );
-    if !filters.is_empty() {
-        sql.push_str(" AND ");
-        sql.push_str(&filter_where_clause(filters));
-    }
-    sql.push_str(&format!(" GROUP BY {group_col} ORDER BY 2 DESC LIMIT 250"));
-
-    let mut query = sqlx::query_as::<_, (String, i64)>(AssertSqlSafe(sql).into_sql_str());
+    let col = group_col.as_str();
+    let mut qb = sqlx::QueryBuilder::new(format!(
+        "SELECT {col}, COUNT(*) FROM stats WHERE {col} IS NOT NULL AND {col} != ''"
+    ));
     for filter in filters {
-        query = query.bind(&filter.name);
+        qb.push(" AND ")
+            .push(filter.column)
+            .push(" = ")
+            .push_bind(&filter.name);
     }
-    query.fetch_all(&state.pool).await
+    qb.push(format!(" GROUP BY {col} ORDER BY 2 DESC LIMIT 250"));
+    qb.build_query_as::<(String, i64)>()
+        .fetch_all(&state.pool)
+        .await
 }
 
 async fn fetch_filtered_total(
     state: &AppState,
     filters: &[FilterClause],
 ) -> Result<i64, sqlx::Error> {
-    let mut sql = String::from("SELECT COUNT(*) FROM stats");
+    let mut qb = sqlx::QueryBuilder::new("SELECT COUNT(*) FROM stats");
+
     if !filters.is_empty() {
-        sql.push_str(" WHERE ");
-        sql.push_str(&filter_where_clause(filters));
+        qb.push(" WHERE ");
+        let mut separated = qb.separated(" AND ");
+        for filter in filters {
+            separated
+                .push(filter.column)
+                .push_unseparated(" = ")
+                .push_bind_unseparated(&filter.name);
+        }
     }
 
-    let mut query = sqlx::query_scalar::<_, i64>(AssertSqlSafe(sql).into_sql_str());
-    for filter in filters {
-        query = query.bind(&filter.name);
-    }
-    query.fetch_one(&state.pool).await
+    qb.build_query_scalar::<i64>().fetch_one(&state.pool).await
 }
 
 #[derive(Serialize, Clone)]
@@ -218,10 +231,10 @@ async fn filtered_stats_inner(
     }
 
     let (models, countries, versions, carriers, total) = tokio::try_join!(
-        fetch_filtered_counts(&state, "model", &filters),
-        fetch_filtered_counts(&state, "country", &filters),
-        fetch_filtered_counts(&state, "version", &filters),
-        fetch_filtered_counts(&state, "carrier", &filters),
+        fetch_filtered_counts(&state, GroupCol::Model, &filters),
+        fetch_filtered_counts(&state, GroupCol::Country, &filters),
+        fetch_filtered_counts(&state, GroupCol::Version, &filters),
+        fetch_filtered_counts(&state, GroupCol::Carrier, &filters),
         fetch_filtered_total(&state, &filters),
     )?;
 
