@@ -6,7 +6,7 @@ import { getFilteredStats } from '@/api/client'
 import type { StatsResponse } from '@/api/types'
 import type { ActiveFilter } from '@/utils/filters'
 import { useAsyncState } from '@vueuse/core'
-import { computed, watch } from 'vue'
+import { watch, type Ref } from 'vue'
 
 export function useStats(filter?: () => ActiveFilter[] | null) {
   const { state, isLoading, error, execute } = useAsyncState<
@@ -22,12 +22,5 @@ export function useStats(filter?: () => ActiveFilter[] | null) {
     { immediate: true }
   )
 
-  const normalizedError = computed(() => {
-    const e = error.value
-    if (e === null || e === undefined) return null
-    if (e instanceof Error) return e
-    return new Error(typeof e === 'string' ? e : JSON.stringify(e))
-  })
-
-  return { data: state, error: normalizedError, loading: isLoading }
+  return { data: state, error: error as Ref<Error | null>, loading: isLoading }
 }

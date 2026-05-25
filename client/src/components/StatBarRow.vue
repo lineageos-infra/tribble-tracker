@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 <script setup lang="ts">
 import type { FilterColumn } from '@/api/types'
 import { routeForFilterSelection } from '@/utils/filters'
-import { countryFlag, countryName, formatNumber } from '@/utils/format'
+import { formatFilterValue, formatNumber } from '@/utils/format'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -21,20 +21,6 @@ const props = defineProps<{
 
 const percent = computed(() => Math.max(0.5, (props.count / props.max) * 100))
 
-const displayPrimary = computed(() => {
-  if (props.column === 'country') {
-    const full = countryName(props.name)
-    return full ?? props.name
-  }
-  return props.name
-})
-
-const displaySecondary = computed(() => {
-  if (props.column === 'country') return props.name.toUpperCase()
-  return null
-})
-
-const flag = computed(() => (props.column === 'country' ? countryFlag(props.name) : null))
 const route = useRoute()
 const target = computed(() =>
   routeForFilterSelection(route, { column: props.column, name: props.name })
@@ -56,13 +42,12 @@ const target = computed(() =>
     >
       {{ rank }}
     </span>
-    <span v-if="flag" class="relative shrink-0 text-base leading-none" aria-hidden="true">
-      {{ flag }}
-    </span>
     <span class="relative flex min-w-0 flex-1 items-baseline gap-2">
-      <span class="truncate text-sm font-medium text-on-surface">{{ displayPrimary }}</span>
-      <span v-if="displaySecondary" class="shrink-0 text-xs text-on-surface-muted">
-        {{ displaySecondary }}
+      <span class="truncate text-sm font-medium text-on-surface">
+        {{ formatFilterValue(props.column, props.name) }}
+      </span>
+      <span v-if="props.column === 'country'" class="shrink-0 text-xs text-on-surface-muted">
+        {{ props.name.toUpperCase() }}
       </span>
     </span>
     <span class="relative shrink-0 text-sm tabular-nums text-on-surface">
