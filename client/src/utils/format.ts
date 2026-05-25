@@ -2,38 +2,34 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { FilterColumn } from '@/api/types'
+
 export function formatNumber(n: number, compact = false): string {
   const options: Intl.NumberFormatOptions = compact ? { notation: 'compact' } : {}
   return new Intl.NumberFormat('en-US', options).format(n)
 }
 
 const regionDisplay = (() => {
-  try {
-    return new Intl.DisplayNames(['en'], { type: 'region' })
-  } catch {
-    return null
-  }
+  return new Intl.DisplayNames(['en'], { type: 'region' })
 })()
 
 export function countryName(code: string): string | null {
   if (!code || code === 'Unknown' || code.length !== 2) return null
   try {
-    return regionDisplay?.of(code.toUpperCase()) ?? null
+    return regionDisplay.of(code.toUpperCase()) ?? null
   } catch {
     return null
   }
 }
 
 export function countryFlag(code: string): string | null {
-  if (!code || code === 'Unknown' || code.length !== 2) return null
-  const upper = code.toUpperCase()
-  if (!/^[A-Z]{2}$/.test(upper)) return null
+  if (!/^[A-Za-z]{2}$/.test(code)) return null
   return String.fromCodePoint(
-    ...[...upper].map((c) => 0x1f1e6 + (c.charCodeAt(0) - 'A'.charCodeAt(0)))
+    ...[...code.toUpperCase()].map((c) => 0x1f1e6 + (c.charCodeAt(0) - 'A'.charCodeAt(0)))
   )
 }
 
-export function formatColumnLabel(column: string): string {
+export function formatColumnLabel(column: FilterColumn): string {
   switch (column) {
     case 'model':
       return 'Device'
