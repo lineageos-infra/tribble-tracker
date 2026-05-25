@@ -108,6 +108,7 @@ const triggers = {
       :height="520"
       class="relative w-full overflow-hidden rounded-3xl bg-surface-elevated"
       :style="containerStyle"
+      @wheel.prevent
     >
       <VisTopoJSONMap
         :topojson="WorldMap110mAlphaTopoJSON"
