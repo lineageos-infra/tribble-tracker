@@ -7,9 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 <script setup lang="ts">
 import { COUNTRY_LAT_LONG } from '@/data/countryLatLong'
 import { countryFlag, countryName, formatNumber } from '@/utils/format'
-import { VisLeafletMap } from '@unovis/vue'
-import { useMediaQuery, usePreferredDark } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { TopoJSONMap, type TopoJSONMapPoint } from '@unovis/ts'
+import { WorldMap110mAlphaTopoJSON } from '@unovis/ts/maps'
+import { VisSingleContainer, VisTooltip, VisTopoJSONMap } from '@unovis/vue'
+import { usePreferredDark } from '@vueuse/core'
+import { computed } from 'vue'
 
 interface Point {
   id: string
@@ -25,84 +27,69 @@ const props = defineProps<{
   total: number
 }>()
 
-const points = computed<Point[]>(() => {
-  const out: Point[] = []
-  for (const [code, count] of Object.entries(props.entries)) {
+const points = computed<Point[]>(() =>
+  Object.entries(props.entries).flatMap(([code, count]) => {
     const centroid = COUNTRY_LAT_LONG[code.toUpperCase()]
-    if (!centroid) continue
-    out.push({
-      id: code,
-      code,
-      label: countryName(code) ?? code,
-      count,
-      latitude: centroid[0],
-      longitude: centroid[1]
-    })
-  }
-  return out
-})
-
-const pointByCode = computed(() => {
-  const m = new Map<string, Point>()
-  for (const p of points.value) m.set(p.code, p)
-  return m
-})
-
-const maxCount = computed(() => points.value.reduce((m, p) => Math.max(m, p.count), 1))
-
-const pointRadius = (d: Point) => {
-  const minR = 5
-  const maxR = 36
-  const t = Math.sqrt(d.count) / Math.sqrt(maxCount.value)
-  return minR + (maxR - minR) * t
-}
-
-const isDark = usePreferredDark()
-const isSmUp = useMediaQuery('(min-width: 640px)')
-
-// unovis VisTooltip doesn't wire into the HTML-based LeafletMap, so delegate
-// mouse events on the rendered marker paths and render our own tooltip.
-const mapWrapper = ref<HTMLElement | null>(null)
-const tooltipPoint = ref<Point | null>(null)
-const tooltipPos = ref({ x: 0, y: 0 })
-
-const tooltipPct = computed(() =>
-  tooltipPoint.value ? ((tooltipPoint.value.count / props.total) * 100).toFixed(2) : ''
+    if (!centroid) return []
+    return [
+      {
+        id: code,
+        code,
+        label: countryName(code) ?? code,
+        count,
+        latitude: centroid[0],
+        longitude: centroid[1]
+      }
+    ]
+  })
 )
 
-function findPointCode(target: EventTarget | null): string | null {
-  let el = target as Element | null
-  while (el && el !== mapWrapper.value) {
-    const id = el.id || ''
-    if (id.startsWith('point-')) return id.slice('point-'.length)
-    if (id.startsWith('label-')) return id.slice('label-'.length)
-    el = el.parentElement
-  }
-  return null
+const maxCount = computed(() => points.value.reduce((m, p) => Math.max(m, p.count), 1))
+const radiusForCount = (count: number) => {
+  const t = Math.min(Math.sqrt(count) / Math.sqrt(maxCount.value), 1)
+  return 5 + 31 * t
 }
 
-function handleMove(e: MouseEvent) {
-  const code = findPointCode(e.target)
-  if (!code) {
-    tooltipPoint.value = null
-    return
-  }
-  const point = pointByCode.value.get(code)
-  if (!point) {
-    tooltipPoint.value = null
-    return
-  }
-  const wrapRect = mapWrapper.value?.getBoundingClientRect()
-  if (!wrapRect) return
-  tooltipPoint.value = point
-  tooltipPos.value = {
-    x: e.clientX - wrapRect.left,
-    y: e.clientY - wrapRect.top
-  }
+const sumClusterCount = (d: { clusterPoints?: Point[] }) =>
+  (d.clusterPoints ?? []).reduce((s, p) => s + p.count, 0)
+const clusterRadius = (d: { clusterPoints?: Point[] }) => radiusForCount(sumClusterCount(d))
+const clusterLabel = (d: { clusterPoints?: Point[] }) => formatNumber(sumClusterCount(d))
+
+const isDark = usePreferredDark()
+const pointColor = 'var(--color-bar-fill)'
+const clusterColor = 'var(--color-bar-fill)'
+const containerStyle = computed(() => ({
+  '--vis-map-feature-color': isDark.value ? '#2a3838' : '#d4e4e4',
+  '--vis-map-boundary-color': isDark.value ? '#131a1a' : '#eaf2f2',
+  '--vis-tooltip-background-color': 'transparent',
+  '--vis-tooltip-border-color': 'transparent',
+  '--vis-tooltip-padding': '0',
+  '--vis-tooltip-box-shadow': 'none'
+}))
+
+const renderTooltip = (label: string, count: number, flag = '') => {
+  const pct = ((count / props.total) * 100).toFixed(2)
+  return `
+    <div class="rounded-md border border-outline-variant bg-surface-elevated px-3 py-2 text-xs text-on-surface shadow-md">
+      <div class="flex items-center gap-1.5 font-medium">${flag ? flag + ' ' : ''}${label}</div>
+      <div class="mt-0.5 text-on-surface-muted">${formatNumber(count)} installs · ${pct}%</div>
+    </div>
+  `
 }
 
-function handleLeave() {
-  tooltipPoint.value = null
+const pointTooltip = (d: TopoJSONMapPoint<Point>) => {
+  if (d.isCluster) {
+    const cluster = d.properties as { clusterPoints?: Point[]; pointCount?: number }
+    const label = `${cluster.pointCount ?? cluster.clusterPoints?.length ?? 0} countries`
+    return renderTooltip(label, sumClusterCount(cluster))
+  }
+  const point = d.properties as Point
+  const flag = point.code !== 'Unknown' ? (countryFlag(point.code) ?? '') : ''
+  return renderTooltip(point.label, point.count, flag)
+}
+
+const triggers = {
+  [TopoJSONMap.selectors.point]: pointTooltip
 }
 </script>
 
@@ -116,50 +103,24 @@ function handleLeave() {
         </p>
       </div>
     </header>
-    <div
-      ref="mapWrapper"
-      class="map-container relative w-full overflow-hidden rounded-3xl"
-      @mousemove="handleMove"
-      @mouseleave="handleLeave"
+    <VisSingleContainer
+      :data="{ points }"
+      :height="520"
+      class="relative w-full overflow-hidden rounded-3xl bg-surface-elevated"
+      :style="containerStyle"
     >
-      <VisLeafletMap
-        :key="isDark ? 'dark' : 'light'"
-        :height="isSmUp ? 520 : 460"
-        :data="points"
-        :style="
-          isDark
-            ? 'https://tiles.openfreemap.org/styles/dark'
-            : 'https://tiles.openfreemap.org/styles/positron'
-        "
-        :point-radius="pointRadius"
-        :point-color="isDark ? 'rgba(204, 232, 233, 0.65)' : 'rgba(22, 124, 128, 0.65)'"
+      <VisTopoJSONMap
+        :topojson="WorldMap110mAlphaTopoJSON"
+        :point-radius="(d: Point) => radiusForCount(d.count)"
+        :point-color="pointColor"
         :point-label="(d: Point) => formatNumber(d.count)"
-        :cluster-color="isDark ? 'rgba(204, 232, 233, 0.75)' : 'rgba(22, 124, 128, 0.75)'"
-        :fit-view-padding="[40, 40]"
-        :attribution="[
-          `<a href=&quot;https://openfreemap.org&quot; target=&quot;_blank&quot;>OpenFreeMap</a> | <a href=&quot;https://www.openmaptiles.org/&quot; target=&quot;_blank&quot;>© OpenMapTiles</a> | <a href=&quot;https://www.openstreetmap.org/copyright&quot; target=&quot;_blank&quot;>Data from OpenStreetMap</a>`
-        ]"
+        :cluster-color="clusterColor"
+        :cluster-radius="clusterRadius"
+        :cluster-label="clusterLabel"
+        :clustering="true"
+        :zoom-extent="[1, 8]"
       />
-      <div
-        v-if="tooltipPoint"
-        class="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-md border border-outline-variant bg-surface-elevated px-3 py-2 text-xs whitespace-nowrap text-on-surface shadow-md"
-        :style="{ left: tooltipPos.x + 'px', top: tooltipPos.y - 12 + 'px' }"
-      >
-        <div class="flex items-center gap-1.5 font-medium">
-          <span v-if="tooltipPoint.code !== 'Unknown'">{{ countryFlag(tooltipPoint.code) }}</span>
-          <span>{{ tooltipPoint.label }}</span>
-        </div>
-        <div class="mt-0.5 text-on-surface-muted">
-          {{ formatNumber(tooltipPoint.count) }} installs · {{ tooltipPct }}%
-        </div>
-      </div>
-    </div>
+      <VisTooltip :triggers="triggers" />
+    </VisSingleContainer>
   </section>
 </template>
-
-<style scoped>
-.map-container {
-  --vis-map-container-background-color: transparent;
-  --vis-dark-map-container-background-color: transparent;
-}
-</style>
