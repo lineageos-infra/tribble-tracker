@@ -127,7 +127,7 @@ struct StatInput {
 
 static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+\.\d+").unwrap());
 static OFFICIAL_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"-(?:UNOFFICIAL|unofficial)").unwrap());
+    LazyLock::new(|| Regex::new(r"\d\d\.\d-\d{8}-NIGHTLY-.*").unwrap());
 
 async fn create_stat(
     state: State<AppState>,
@@ -160,7 +160,7 @@ async fn create_stat(
         .as_str()
         .to_string();
 
-    let official = !OFFICIAL_REGEX.is_match(&input.version);
+    let official = OFFICIAL_REGEX.is_match(&input.version);
 
     if input.country != "Unknown" {
         input.country = input.country.to_uppercase();
