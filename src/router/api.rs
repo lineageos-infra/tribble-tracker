@@ -9,6 +9,7 @@ use axum::{
     extract::{Query, State},
     routing::get,
 };
+use axum_extra::{TypedHeader, headers::UserAgent};
 use cached::macros::cached;
 use indexmap::IndexMap;
 use regex::Regex;
@@ -131,8 +132,18 @@ static OFFICIAL_REGEX: LazyLock<Regex> =
 
 async fn create_stat(
     state: State<AppState>,
+    user_agent: Option<TypedHeader<UserAgent>>,
     mut input: Json<StatInput>,
 ) -> Result<&'static str, super::RouterError> {
+    let is_dalvik = user_agent
+        .as_ref()
+        .map(|x| x.as_str().starts_with("Dalvik/"))
+        .unwrap_or(false);
+
+    if !is_dalvik {
+        return Ok("neat");
+    }
+
     {
         let banned = state.banned.read().unwrap();
         if banned.versions.contains(&input.version) || banned.models.contains(&input.name) {
