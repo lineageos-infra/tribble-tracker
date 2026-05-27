@@ -2,10 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-const numberFormatter = new Intl.NumberFormat('en-US')
-
-export function formatNumber(n: number): string {
-  return numberFormatter.format(n)
+export function formatNumber(n: number, compact = false): string {
+  const options: Intl.NumberFormatOptions = compact ? { notation: 'compact' } : {}
+  return new Intl.NumberFormat('en-US', options).format(n)
 }
 
 const regionDisplay = (() => {
