@@ -110,6 +110,7 @@ const pointTooltip = (d: TopoJSONMapPoint<Point>) => {
 
 <style scoped>
 .vis-country-map {
+  --vis-font-family: var(--font-sans);
   --vis-map-feature-color: #d4e4e4;
   --vis-map-boundary-color: #eaf2f2;
   --vis-tooltip-background-color: transparent;
