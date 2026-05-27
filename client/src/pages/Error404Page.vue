@@ -10,7 +10,7 @@ import { ChevronLeft } from '@lucide/vue'
 
 <template>
   <div
-    class="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-6 text-center"
+    class="mx-auto flex w-full container max-w-6xl flex-1 flex-col items-center justify-center gap-6 text-center"
   >
     <h1 class="text-4xl">Page Not Found</h1>
     <h2>

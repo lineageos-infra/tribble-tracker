@@ -11,7 +11,7 @@ import { ExternalLink } from '@lucide/vue'
 
 <template>
   <header class="sticky top-0 z-20 border-b border-outline-variant bg-surface px-4 sm:px-8">
-    <div class="mx-auto flex h-16 max-w-7xl items-center gap-3">
+    <div class="mx-auto flex h-16 container max-w-6xl items-center gap-3">
       <RouterLink
         to="/"
         class="flex items-center gap-3 rounded-full px-2 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
