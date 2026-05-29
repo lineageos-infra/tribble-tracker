@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "tribble-tracker-rs"
+name = "tribble-tracker"
 version = "0.1.0"
 edition = "2024"
 
@@ -16,7 +16,9 @@ sqlx = { version = "0.9.0", features = ["runtime-tokio", "sqlite", "macros"] }
 regex = "1.11"
 indexmap = { version = "2.14.0", features = ["serde"] }
 cached = { version = "1.0.0", features = ["tokio", "serde", "async", "async_tokio_rt_multi_thread"] }
-tower-http = { version = "0.6.11", features = ["fs"] }
+tower-http = { version = "0.6.11", features = ["fs", "trace"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+log = "0.4.30"
 
 [profile.release]
 lto = "fat"

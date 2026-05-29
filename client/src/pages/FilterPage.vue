@@ -5,18 +5,21 @@ SPDX-License-Identifier: Apache-2.0
 -->
 
 <script setup lang="ts">
-import { FILTER_COLUMNS, FILTER_TITLES } from '@/api/types'
+import { FILTER_COLUMNS } from '@/api/types'
 import FilterChip from '@/components/FilterChip.vue'
 import StatCard from '@/components/StatCard.vue'
 import StatCardSkeleton from '@/components/StatCardSkeleton.vue'
 import { useStats } from '@/composables/useStats'
 import { filtersFromRoute, routeForClearingFilter } from '@/utils/filters'
-import { formatNumber } from '@/utils/format'
+import { formatColumnLabel, formatNumber } from '@/utils/format'
 import { LoaderCircle } from '@lucide/vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
-const CARDS = FILTER_COLUMNS.map((column) => ({ column, title: FILTER_TITLES[column] }))
+const CARDS = FILTER_COLUMNS.map((column) => ({
+  column,
+  title: `Top ${formatColumnLabel(column)}`
+}))
 
 const GRID_COLS = [
   '',

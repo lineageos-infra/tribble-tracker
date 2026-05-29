@@ -13,14 +13,3 @@ export interface StatsResponse {
 export type FilterColumn = 'model' | 'country' | 'version' | 'carrier'
 
 export const FILTER_COLUMNS: FilterColumn[] = ['model', 'country', 'version', 'carrier']
-
-export const FILTER_TITLES: Record<FilterColumn, string> = {
-  model: 'Top Devices',
-  country: 'Top Countries',
-  version: 'Top Versions',
-  carrier: 'Top Carriers'
-}
-
-export function isFilterColumn(value: string): value is FilterColumn {
-  return (FILTER_COLUMNS as string[]).includes(value)
-}

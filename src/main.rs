@@ -3,9 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::Router;
-use std::net::SocketAddr;
-use std::sync::{Arc, RwLock};
+use log::info;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tower_http::services::{ServeDir, ServeFile};
+use tower_http::trace::TraceLayer;
+use tracing_subscriber::EnvFilter;
 
 pub mod database;
 pub mod router;
@@ -40,20 +43,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Production Path, use vite directly in development
     let client = ServeDir::new("client").fallback(ServeFile::new("client/index.html"));
 
-    let app = Router::new()
-        .nest("/api/v1", router::api::api_router())
-        .nest("/internal", router::internal::internal_router())
-        .fallback_service(client)
-        .with_state(state);
+    // Tracing
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env()
+                .or_else(|_| EnvFilter::try_new("tribble_tracker=info,tower_http=trace"))?,
+        )
+        .without_time()
+        .init();
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
-    println!("listening on {}", listener.local_addr().unwrap());
-    axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .with_graceful_shutdown(shutdown_signal())
-    .await?;
+    let public_router = Router::new()
+        .nest("/api/v1", router::api::api_router())
+        .fallback_service(client)
+        .with_state(state.clone())
+        .layer(TraceLayer::new_for_http());
+    let internal_router = Router::new()
+        .nest("/internal", router::internal::internal_router())
+        .with_state(state.clone());
+
+    let public_listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
+    let internal_listener = tokio::net::TcpListener::bind("127.0.0.1:8081").await?;
+
+    info!("listening on {}", public_listener.local_addr()?);
+    tokio::try_join!(
+        axum::serve(public_listener, public_router.into_make_service())
+            .with_graceful_shutdown(shutdown_signal()),
+        axum::serve(internal_listener, internal_router.into_make_service())
+            .with_graceful_shutdown(shutdown_signal()),
+    )?;
 
     Ok(())
 }

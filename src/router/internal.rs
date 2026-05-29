@@ -6,33 +6,16 @@ use crate::AppState;
 use crate::database::BannedItem;
 use axum::{
     Json, Router,
-    extract::{ConnectInfo, Request, State},
-    http::StatusCode,
-    middleware::{self, Next},
-    response::Response,
+    extract::State,
     routing::{get, post},
 };
 use serde::Deserialize;
-use std::net::SocketAddr;
 
 pub fn internal_router() -> Router<AppState> {
     Router::new()
         .route("/ban/list", get(list_bans))
         .route("/ban/model", post(ban_model))
         .route("/ban/version", post(ban_version))
-        .layer(middleware::from_fn(require_loopback))
-}
-
-async fn require_loopback(
-    addr: ConnectInfo<SocketAddr>,
-    req: Request,
-    next: Next,
-) -> Result<Response, StatusCode> {
-    if addr.ip().is_loopback() {
-        Ok(next.run(req).await)
-    } else {
-        Err(StatusCode::FORBIDDEN)
-    }
 }
 
 async fn list_bans(

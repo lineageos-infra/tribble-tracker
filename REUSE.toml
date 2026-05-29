@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 version = 1
-SPDX-PackageName = "tribble-tracker-rs"
+SPDX-PackageName = "tribble-tracker"
 SPDX-PackageSupplier = "The LineageOS Project"
-SPDX-PackageDownloadLocation = "https://github.com/lineageos-infra/tribble-tracker-rs"
+SPDX-PackageDownloadLocation = "https://github.com/lineageos-infra/tribble-tracker"
 
 [[annotations]]
 path = [
