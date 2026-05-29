@@ -129,6 +129,7 @@ struct StatInput {
 static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+\.\d+").unwrap());
 static OFFICIAL_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\d\d\.\d-\d{8}-NIGHTLY-.*").unwrap());
+static DEVICE_ID_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-f]{64}$").unwrap());
 
 async fn create_stat(
     state: State<AppState>,
@@ -149,6 +150,10 @@ async fn create_stat(
         if banned.versions.contains(&input.version) || banned.models.contains(&input.name) {
             return Ok("neat");
         }
+    }
+
+    if !DEVICE_ID_REGEX.is_match(&input.device_id) {
+        return Err(super::RouterError::BadRequest("device_id is not valid"));
     }
 
     if input.name != "x86_64" && !input.version.ends_with(&input.name) {
