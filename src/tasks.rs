@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::collections::HashSet;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+
+use tokio::sync::RwLock;
 
 use crate::database::{Database, DbError};
 
@@ -39,7 +41,7 @@ pub async fn refresh_banned(db: &Database, cache: &BannedCache) -> Result<(), Db
             next.models.insert(m);
         }
     }
-    *cache.write().unwrap() = next;
+    *cache.write().await = next;
     Ok(())
 }
 

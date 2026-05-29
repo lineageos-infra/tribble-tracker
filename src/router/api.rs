@@ -146,7 +146,7 @@ async fn create_stat(
     }
 
     {
-        let banned = state.banned.read().unwrap();
+        let banned = state.banned.read().await;
         if banned.versions.contains(&input.version) || banned.models.contains(&input.name) {
             return Ok("neat");
         }
