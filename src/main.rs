@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env()
-                .or_else(|_| EnvFilter::try_new("tribble_tracker_rs=info,tower_http=trace"))?,
+                .or_else(|_| EnvFilter::try_new("tribble_tracker=info,tower_http=trace"))?,
         )
         .without_time()
         .init();

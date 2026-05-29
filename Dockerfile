@@ -29,7 +29,7 @@ RUN pnpm build
 FROM alpine:3.23
 RUN apk add --no-cache curl sqlite
 WORKDIR /app
-COPY --from=builder /app/target/release/tribble-tracker-rs /app/tribble-tracker-rs
+COPY --from=builder /app/target/release/tribble-tracker /app/tribble-tracker
 COPY migrations /app/migrations
 COPY --from=client /client/dist /app/client
-ENTRYPOINT ["/app/tribble-tracker-rs"]
+ENTRYPOINT ["/app/tribble-tracker"]

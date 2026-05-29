@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "tribble-tracker-rs"
+name = "tribble-tracker"
 version = "0.1.0"
 edition = "2024"
 
