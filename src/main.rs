@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::Router;
-use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 use tower_http::services::{ServeDir, ServeFile};
 
@@ -40,20 +39,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Production Path, use vite directly in development
     let client = ServeDir::new("client").fallback(ServeFile::new("client/index.html"));
 
-    let app = Router::new()
+    let public_router = Router::new()
         .nest("/api/v1", router::api::api_router())
-        .nest("/internal", router::internal::internal_router())
         .fallback_service(client)
-        .with_state(state);
+        .with_state(state.clone());
+    let internal_router = Router::new()
+        .nest("/internal", router::internal::internal_router())
+        .with_state(state.clone());
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
-    println!("listening on {}", listener.local_addr().unwrap());
-    axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .with_graceful_shutdown(shutdown_signal())
-    .await?;
+    let public_listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
+    let internal_listener = tokio::net::TcpListener::bind("127.0.0.1:8081").await?;
+
+    println!("listening on {}", public_listener.local_addr().unwrap());
+    tokio::try_join!(
+        axum::serve(public_listener, public_router.into_make_service())
+            .with_graceful_shutdown(shutdown_signal()),
+        axum::serve(internal_listener, internal_router.into_make_service())
+            .with_graceful_shutdown(shutdown_signal()),
+    )?;
 
     Ok(())
 }
