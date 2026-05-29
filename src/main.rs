@@ -3,10 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::Router;
+use log::info;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tower_http::services::{ServeDir, ServeFile};
+use tower_http::trace::TraceLayer;
+use tracing_subscriber::EnvFilter;
 
 pub mod database;
 pub mod router;
@@ -41,14 +44,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Production Path, use vite directly in development
     let client = ServeDir::new("client").fallback(ServeFile::new("client/index.html"));
 
+    // Tracing
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env()
+                .or_else(|_| EnvFilter::try_new("tribble_tracker=info,tower_http=trace"))?,
+        )
+        .without_time()
+        .init();
+
     let app = Router::new()
         .nest("/api/v1", router::api::api_router())
         .nest("/internal", router::internal::internal_router())
         .fallback_service(client)
-        .with_state(state);
+        .with_state(state)
+        .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
-    println!("listening on {}", listener.local_addr().unwrap());
+    info!("listening on {}", listener.local_addr()?);
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),

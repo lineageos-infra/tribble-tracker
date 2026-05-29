@@ -6,6 +6,7 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use log::error;
 
 use crate::database::DbError;
 
@@ -27,7 +28,7 @@ impl IntoResponse for RouterError {
     fn into_response(self) -> Response {
         match self {
             RouterError::Db(e) => {
-                eprintln!("database error: {:?}", e);
+                error!("database error: {:?}", e);
                 (StatusCode::INTERNAL_SERVER_ERROR, "sql error").into_response()
             }
             RouterError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg).into_response(),

@@ -5,6 +5,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use log::{error, info};
 use tokio::sync::RwLock;
 
 use crate::database::{Database, DbError};
@@ -15,8 +16,8 @@ pub fn spawn_stats_cleanup(db: Database) {
         loop {
             ticker.tick().await;
             match db.delete_old_stats().await {
-                Ok(n) => println!("dropped {n} old stats rows"),
-                Err(e) => eprintln!("delete_old_stats failed: {e:?}"),
+                Ok(n) => info!("dropped {n} old stats rows"),
+                Err(e) => error!("delete_old_stats failed: {e:?}"),
             }
         }
     });
@@ -51,7 +52,7 @@ pub fn spawn_banned_refresh(db: Database, banned: BannedCache) {
         loop {
             ticker.tick().await;
             if let Err(e) = refresh_banned(&db, &banned).await {
-                eprintln!("failed to refresh banned list: {e:?}");
+                error!("failed to refresh banned list: {e:?}");
             }
         }
     });
