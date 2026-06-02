@@ -4,9 +4,11 @@
 
 use crate::AppState;
 use crate::database::BannedItem;
+use crate::database::VersionRawTotalItem;
+use crate::router::api::FilterQuery;
 use axum::{
     Json, Router,
-    extract::{ConnectInfo, Request, State},
+    extract::{ConnectInfo, Query, Request, State},
     http::StatusCode,
     middleware::{self, Next},
     response::Response,
@@ -20,6 +22,7 @@ pub fn internal_router() -> Router<AppState> {
         .route("/ban/list", get(list_bans))
         .route("/ban/model", post(ban_model))
         .route("/ban/version", post(ban_version))
+        .route("/installations", get(installations))
         .layer(middleware::from_fn(require_loopback))
 }
 
@@ -82,4 +85,13 @@ async fn ban_version(
         .upsert_banned_version(&input.version, input.note.as_deref())
         .await?;
     Ok("OK")
+}
+
+async fn installations(
+    State(state): State<AppState>,
+    Query(query): Query<FilterQuery>,
+) -> Result<Json<Vec<VersionRawTotalItem>>, super::RouterError> {
+    let filters = query.to_filters();
+    let items = state.db.fetch_version_raw_total(&filters).await?;
+    Ok(Json(items))
 }

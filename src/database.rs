@@ -53,6 +53,12 @@ pub struct BannedItem {
     pub note: Option<String>,
 }
 
+#[derive(Serialize, sqlx::FromRow)]
+pub struct VersionRawTotalItem {
+    pub version_raw: String,
+    pub installations: i64,
+}
+
 pub struct NewStat<'a> {
     pub device_id: &'a str,
     pub carrier: Option<&'a str>,
@@ -171,6 +177,33 @@ impl Database {
 
         let total = qb.build_query_scalar::<i64>().fetch_one(&self.pool).await?;
         Ok(total)
+    }
+
+    pub async fn fetch_version_raw_total(
+        &self,
+        filters: &[FilterClause<'_>],
+    ) -> Result<Vec<VersionRawTotalItem>, DbError> {
+        let mut qb =
+            sqlx::QueryBuilder::new("SELECT version_raw, COUNT(*) AS installations FROM stats");
+
+        if !filters.is_empty() {
+            qb.push(" WHERE ");
+            let mut separated = qb.separated(" AND ");
+            for filter in filters {
+                separated
+                    .push(filter.column)
+                    .push_unseparated(" = ")
+                    .push_bind_unseparated(filter.value);
+            }
+        }
+
+        qb.push(" GROUP BY version_raw ORDER BY installations DESC");
+
+        let items = qb
+            .build_query_as::<VersionRawTotalItem>()
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(items)
     }
 
     pub async fn list_bans(&self) -> Result<Vec<BannedItem>, DbError> {

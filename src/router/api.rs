@@ -23,7 +23,7 @@ pub fn api_router() -> Router<AppState> {
 }
 
 #[derive(Deserialize, Clone, Hash, PartialEq, Eq)]
-struct FilterQuery {
+pub struct FilterQuery {
     #[serde(default)]
     model: Option<String>,
     #[serde(default)]
@@ -35,7 +35,7 @@ struct FilterQuery {
 }
 
 impl FilterQuery {
-    fn to_filters(&self) -> Vec<FilterClause<'_>> {
+    pub fn to_filters(&self) -> Vec<FilterClause<'_>> {
         let mut filters = Vec::new();
 
         if let Some(name) = &self.model {
