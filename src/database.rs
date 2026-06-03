@@ -179,6 +179,20 @@ impl Database {
         Ok(total)
     }
 
+    pub async fn fetch_official_total(&self, filters: &[FilterClause<'_>]) -> Result<i64, DbError> {
+        let mut qb = sqlx::QueryBuilder::new("SELECT COUNT(*) FROM stats WHERE official = 1");
+
+        for filter in filters {
+            qb.push(" AND ")
+                .push(filter.column)
+                .push(" = ")
+                .push_bind(filter.value);
+        }
+
+        let total = qb.build_query_scalar::<i64>().fetch_one(&self.pool).await?;
+        Ok(total)
+    }
+
     pub async fn fetch_version_raw_total(
         &self,
         filters: &[FilterClause<'_>],

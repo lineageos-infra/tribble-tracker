@@ -74,6 +74,7 @@ struct StatsResponse {
     version: IndexMap<String, usize>,
     carrier: IndexMap<String, usize>,
     total: usize,
+    official: usize,
 }
 
 async fn filtered_stats(
@@ -96,12 +97,13 @@ async fn filtered_stats_inner(
 ) -> Result<Json<StatsResponse>, super::RouterError> {
     let filters = query.to_filters();
 
-    let (models, countries, versions, carriers, total) = tokio::try_join!(
+    let (models, countries, versions, carriers, total, official) = tokio::try_join!(
         state.db.fetch_grouped_counts(GroupCol::Model, &filters),
         state.db.fetch_grouped_counts(GroupCol::Country, &filters),
         state.db.fetch_grouped_counts(GroupCol::Version, &filters),
         state.db.fetch_grouped_counts(GroupCol::Carrier, &filters),
         state.db.fetch_total(&filters),
+        state.db.fetch_official_total(&filters),
     )?;
 
     Ok(Json(StatsResponse {
@@ -113,6 +115,7 @@ async fn filtered_stats_inner(
         version: versions.into_iter().map(|(k, c)| (k, c as usize)).collect(),
         carrier: carriers.into_iter().map(|(k, c)| (k, c as usize)).collect(),
         total: total as usize,
+        official: official as usize,
     }))
 }
 
