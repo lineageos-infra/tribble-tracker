@@ -212,6 +212,18 @@ impl Database {
     /// # Errors
     ///
     /// Returns a [`DbError`] if the query fails.
+    pub async fn fetch_official_total(&self, filters: &[FilterClause<'_>]) -> Result<i64, DbError> {
+        let mut qb = sqlx::QueryBuilder::new("SELECT COUNT(*) FROM stats WHERE official = 1");
+
+        Self::append_filters(&mut qb, filters);
+
+        let total = qb.build_query_scalar::<i64>().fetch_one(&self.pool).await?;
+        Ok(total)
+    }
+
+    /// # Errors
+    ///
+    /// Returns a [`DbError`] if the query fails.
     pub async fn fetch_total_installations(
         &self,
         filters: &[FilterClause<'_>],

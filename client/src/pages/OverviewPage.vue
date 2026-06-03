@@ -18,7 +18,7 @@ const { data, loading, error } = useStats()
 
 <template>
   <div class="container mx-auto flex w-full max-w-6xl flex-col gap-6">
-    <HeroTotal :value="data?.total ?? 0" />
+    <HeroTotal :value="data?.total ?? 0" :official="data?.official ?? 0" />
 
     <p
       v-if="error"

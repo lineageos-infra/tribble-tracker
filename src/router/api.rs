@@ -67,6 +67,7 @@ struct StatsResponse {
     version: IndexMap<String, i64>,
     carrier: IndexMap<String, i64>,
     total: i64,
+    official: i64,
 }
 
 async fn filtered_stats(
@@ -107,12 +108,13 @@ async fn filtered_stats_inner(
     let filters = query.to_filters();
     let pinned = query.to_map();
 
-    let (models, countries, versions, carriers, total) = tokio::try_join!(
+    let (models, countries, versions, carriers, total, official) = tokio::try_join!(
         fetch_group(&state, GroupCol::Model, &filters, &pinned),
         fetch_group(&state, GroupCol::Country, &filters, &pinned),
         fetch_group(&state, GroupCol::Version, &filters, &pinned),
         fetch_group(&state, GroupCol::Carrier, &filters, &pinned),
         state.db.fetch_total(&filters),
+        state.db.fetch_official_total(&filters),
     )?;
 
     let resolve = |rows: Option<Vec<GroupedCount>>, col: GroupCol| -> IndexMap<String, i64> {
@@ -128,6 +130,7 @@ async fn filtered_stats_inner(
         version: resolve(versions, GroupCol::Version),
         carrier: resolve(carriers, GroupCol::Carrier),
         total,
+        official,
     }))
 }
 

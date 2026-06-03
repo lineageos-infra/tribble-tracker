@@ -8,6 +8,7 @@ export interface StatsResponse {
   version: Record<string, number>
   carrier: Record<string, number>
   total: number
+  official: number
 }
 
 export type FilterColumn = 'model' | 'country' | 'version' | 'carrier'
