@@ -21,7 +21,7 @@ const tweened = useTransition(toRef(props, 'value'), {
 
 <template>
   <section
-    class="flex flex-col items-center gap-2 rounded-3xl bg-brand-primary px-6 py-10 text-center sm:py-14"
+    class="flex flex-col items-center gap-2 rounded-3xl bg-brand-primary px-6 py-10 text-center text-white sm:py-14"
   >
     <p class="text-5xl font-medium tabular-nums sm:text-6xl md:text-7xl">
       {{ formatNumber(Math.round(tweened)) }}
