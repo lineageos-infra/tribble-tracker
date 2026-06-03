@@ -9,14 +9,16 @@ use crate::router::api::FilterQuery;
 use axum::{
     Json, Router,
     extract::{Query, State},
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use serde::Deserialize;
 
 pub fn internal_router() -> Router<AppState> {
     Router::new()
         .route("/ban/list", get(list_bans))
+        .route("/ban/model", delete(unban_model))
         .route("/ban/model", post(ban_model))
+        .route("/ban/version", delete(unban_version))
         .route("/ban/version", post(ban_version))
         .route("/installations", get(installations))
 }
@@ -49,6 +51,17 @@ async fn ban_model(
     Ok("OK")
 }
 
+async fn unban_model(
+    state: State<AppState>,
+    input: Json<BanModelInput>,
+) -> Result<&'static str, super::RouterError> {
+    if input.model.is_empty() {
+        return Err(super::RouterError::BadRequest("model is required"));
+    }
+    state.db.remove_banned_model(&input.model).await?;
+    Ok("OK")
+}
+
 #[derive(Deserialize)]
 struct BanVersionInput {
     version: String,
@@ -67,6 +80,17 @@ async fn ban_version(
         .db
         .upsert_banned_version(&input.version, input.note.as_deref())
         .await?;
+    Ok("OK")
+}
+
+async fn unban_version(
+    state: State<AppState>,
+    input: Json<BanVersionInput>,
+) -> Result<&'static str, super::RouterError> {
+    if input.version.is_empty() {
+        return Err(super::RouterError::BadRequest("version is required"));
+    }
+    state.db.remove_banned_version(&input.version).await?;
     Ok("OK")
 }
 

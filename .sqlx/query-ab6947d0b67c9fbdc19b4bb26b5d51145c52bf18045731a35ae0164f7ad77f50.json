@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM banned WHERE model = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "ab6947d0b67c9fbdc19b4bb26b5d51145c52bf18045731a35ae0164f7ad77f50"
+}

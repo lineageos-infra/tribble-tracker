@@ -10,6 +10,8 @@ import {
   banVersion,
   getInstallations,
   listBans,
+  unbanModel,
+  unbanVersion,
   type BannedItem,
   type InstallationFilters,
   type VersionRawTotalItem
@@ -18,7 +20,7 @@ import Button from '@/components/ui/Button.vue'
 import SnackBar from '@/components/ui/SnackBar.vue'
 import TextField from '@/components/ui/TextField.vue'
 import { formatNumber } from '@/utils/format'
-import { Ban, LoaderCircle, RefreshCw, Search } from '@lucide/vue'
+import { Ban, CircleX, LoaderCircle, RefreshCw, Search } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 
 const snackbar = ref<string | null>(null)
@@ -86,6 +88,21 @@ async function submitBanVersion() {
     notify((e as Error).message)
   } finally {
     versionBusy.value = false
+  }
+}
+
+async function deleteBan(item: BannedItem) {
+  try {
+    if (item.model) {
+      await unbanModel(item.model)
+      notify(`Unbanned model "${item.model}"`)
+    } else if (item.version) {
+      await unbanVersion(item.version)
+      notify(`Unbanned version "${item.version}"`)
+    }
+    await loadBans()
+  } catch (e) {
+    notify((e as Error).message)
   }
 }
 
@@ -185,6 +202,7 @@ onMounted(loadBans)
               <th class="px-2 py-1 font-medium">Model</th>
               <th class="px-2 py-1 font-medium">Version</th>
               <th class="px-2 py-1 font-medium">Note</th>
+              <th class="px-2 py-1 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -192,6 +210,17 @@ onMounted(loadBans)
               <td class="px-2 py-1.5 text-on-surface">{{ item.model ?? '—' }}</td>
               <td class="px-2 py-1.5 text-on-surface">{{ item.version ?? '—' }}</td>
               <td class="px-2 py-1.5 text-on-surface-muted">{{ item.note ?? '—' }}</td>
+              <td class="px-2 py-1.5 text-on-surface">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-outline-variant px-3 py-1.5 text-xs text-on-surface transition hover:border-brand-primary disabled:opacity-50"
+                  :disabled="bansLoading"
+                  @click="deleteBan(item)"
+                >
+                  <CircleX class="size-3.5" />
+                  Delete
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>

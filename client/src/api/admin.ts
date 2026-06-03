@@ -20,9 +20,9 @@ export interface InstallationFilters {
   carrier?: string
 }
 
-async function request<T>(url: string, body?: unknown): Promise<T> {
+async function request<T>(url: string, method?: string, body?: unknown): Promise<T> {
   const res = await fetch(url, {
-    method: body === undefined ? 'GET' : 'POST',
+    method: method ?? 'GET',
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body)
   })
@@ -38,11 +38,19 @@ export function listBans(): Promise<BannedItem[]> {
 }
 
 export function banModel(model: string, note?: string): Promise<string> {
-  return request('/internal/ban/model', { model, note })
+  return request('/internal/ban/model', 'POST', { model, note })
+}
+
+export function unbanModel(model: string): Promise<string> {
+  return request('/internal/ban/model', 'DELETE', { model })
 }
 
 export function banVersion(version: string, note?: string): Promise<string> {
-  return request('/internal/ban/version', { version, note })
+  return request('/internal/ban/version', 'POST', { version, note })
+}
+
+export function unbanVersion(version: string): Promise<string> {
+  return request('/internal/ban/version', 'DELETE', { version })
 }
 
 export function getInstallations(filters: InstallationFilters): Promise<VersionRawTotalItem[]> {

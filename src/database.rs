@@ -213,6 +213,13 @@ impl Database {
         Ok(items)
     }
 
+    pub async fn remove_banned_model(&self, model: &str) -> Result<(), DbError> {
+        sqlx::query!("DELETE FROM banned WHERE model = ?", model)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
     pub async fn upsert_banned_model(
         &self,
         model: &str,
@@ -226,6 +233,13 @@ impl Database {
         )
         .execute(&self.pool)
         .await?;
+        Ok(())
+    }
+
+    pub async fn remove_banned_version(&self, version: &str) -> Result<(), DbError> {
+        sqlx::query!("DELETE FROM banned WHERE version = ?", version)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 
