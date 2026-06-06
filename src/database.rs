@@ -160,7 +160,7 @@ impl Database {
                 .push(" = ")
                 .push_bind(filter.value);
         }
-        qb.push(format!(" GROUP BY {col} ORDER BY 2 DESC LIMIT 250"));
+        qb.push(format!(" GROUP BY {col} ORDER BY count DESC LIMIT 250"));
         let rows = qb
             .build_query_as::<GroupedCount>()
             .fetch_all(&self.pool)
