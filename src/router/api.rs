@@ -36,35 +36,25 @@ pub struct FilterQuery {
 }
 
 impl FilterQuery {
+    pub fn iter(&self) -> impl Iterator<Item = (&'static str, &str)> {
+        [
+            self.model.as_deref().map(|v| ("model", v)),
+            self.country.as_deref().map(|v| ("country", v)),
+            self.version.as_deref().map(|v| ("version", v)),
+            self.carrier.as_deref().map(|v| ("carrier", v)),
+        ]
+        .into_iter()
+        .flatten()
+    }
+
     pub fn to_filters(&self) -> Vec<FilterClause<'_>> {
-        let mut filters = Vec::new();
+        self.iter()
+            .map(|(column, value)| FilterClause { column, value })
+            .collect()
+    }
 
-        if let Some(name) = &self.model {
-            filters.push(FilterClause {
-                column: "model",
-                value: name,
-            });
-        }
-        if let Some(name) = &self.country {
-            filters.push(FilterClause {
-                column: "country",
-                value: name,
-            });
-        }
-        if let Some(name) = &self.version {
-            filters.push(FilterClause {
-                column: "version",
-                value: name,
-            });
-        }
-        if let Some(name) = &self.carrier {
-            filters.push(FilterClause {
-                column: "carrier",
-                value: name,
-            });
-        }
-
-        filters
+    pub fn to_map(&self) -> HashMap<&'static str, &str> {
+        self.iter().collect()
     }
 }
 
@@ -114,7 +104,7 @@ async fn filtered_stats_inner(
     query: FilterQuery,
 ) -> Result<Json<StatsResponse>, super::RouterError> {
     let filters = query.to_filters();
-    let pinned: HashMap<_, _> = filters.iter().map(|f| (f.column, f.value)).collect();
+    let pinned = query.to_map();
 
     let (models, countries, versions, carriers, total) = tokio::try_join!(
         fetch_group(&state, "model", GroupCol::Model, &filters, &pinned),
