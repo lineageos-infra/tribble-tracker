@@ -115,12 +115,13 @@ async fn filtered_stats_inner(
     )?;
 
     let resolve = |rows: Option<Vec<GroupedCount>>, col: &str| -> IndexMap<String, usize> {
-        rows.map(|r| {
-            r.into_iter()
+        match rows {
+            Some(rows) => rows
+                .into_iter()
                 .map(|row| (row.name, row.count as usize))
-                .collect()
-        })
-        .unwrap_or_else(|| IndexMap::from([(pinned[col].to_string(), total as usize)]))
+                .collect(),
+            None => IndexMap::from([(pinned[col].to_string(), total as usize)]),
+        }
     };
 
     Ok(Json(StatsResponse {
