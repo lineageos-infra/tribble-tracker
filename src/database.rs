@@ -90,6 +90,12 @@ impl GroupCol {
     }
 }
 
+#[derive(sqlx::FromRow)]
+pub struct GroupedCount {
+    pub name: String,
+    pub count: i64,
+}
+
 pub struct FilterClause<'a> {
     pub column: &'static str,
     pub value: &'a str,
@@ -143,10 +149,10 @@ impl Database {
         &self,
         group: GroupCol,
         filters: &[FilterClause<'_>],
-    ) -> Result<Vec<(String, i64)>, DbError> {
+    ) -> Result<Vec<GroupedCount>, DbError> {
         let col = group.as_str();
         let mut qb = sqlx::QueryBuilder::new(format!(
-            "SELECT {col}, COUNT(*) FROM stats WHERE {col} IS NOT NULL AND {col} != ''"
+            "SELECT {col} as name, COUNT(*) as count FROM stats WHERE {col} IS NOT NULL AND {col} != ''"
         ));
         for filter in filters {
             qb.push(" AND ")
@@ -156,7 +162,7 @@ impl Database {
         }
         qb.push(format!(" GROUP BY {col} ORDER BY 2 DESC LIMIT 250"));
         let rows = qb
-            .build_query_as::<(String, i64)>()
+            .build_query_as::<GroupedCount>()
             .fetch_all(&self.pool)
             .await?;
         Ok(rows)

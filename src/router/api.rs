@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::AppState;
-use crate::database::{FilterClause, GroupCol, NewStat};
+use crate::database::{DbError, FilterClause, GroupCol, GroupedCount, NewStat};
 use axum::{
     Json, Router,
     extract::{Query, State, rejection::JsonRejection},
@@ -14,6 +14,7 @@ use cached::macros::cached;
 use indexmap::IndexMap;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::LazyLock;
 
 pub fn api_router() -> Router<AppState> {
@@ -83,6 +84,24 @@ async fn filtered_stats(
     filtered_stats_inner(state, query).await
 }
 
+async fn fetch_group(
+    state: &AppState,
+    col: &str,
+    group: GroupCol,
+    filters: &[FilterClause<'_>],
+    pinned: &HashMap<&str, &str>,
+) -> Result<Option<Vec<GroupedCount>>, DbError> {
+    if pinned.contains_key(col) {
+        Ok(None)
+    } else {
+        state
+            .db
+            .fetch_grouped_counts(group, filters)
+            .await
+            .map(Some)
+    }
+}
+
 #[cached(
     result = true,
     size = 1000,
@@ -95,23 +114,30 @@ async fn filtered_stats_inner(
     query: FilterQuery,
 ) -> Result<Json<StatsResponse>, super::RouterError> {
     let filters = query.to_filters();
+    let pinned: HashMap<_, _> = filters.iter().map(|f| (f.column, f.value)).collect();
 
     let (models, countries, versions, carriers, total) = tokio::try_join!(
-        state.db.fetch_grouped_counts(GroupCol::Model, &filters),
-        state.db.fetch_grouped_counts(GroupCol::Country, &filters),
-        state.db.fetch_grouped_counts(GroupCol::Version, &filters),
-        state.db.fetch_grouped_counts(GroupCol::Carrier, &filters),
+        fetch_group(&state, "model", GroupCol::Model, &filters, &pinned),
+        fetch_group(&state, "country", GroupCol::Country, &filters, &pinned),
+        fetch_group(&state, "version", GroupCol::Version, &filters, &pinned),
+        fetch_group(&state, "carrier", GroupCol::Carrier, &filters, &pinned),
         state.db.fetch_total(&filters),
     )?;
 
+    let resolve = |rows: Option<Vec<GroupedCount>>, col: &str| -> IndexMap<String, usize> {
+        rows.map(|r| {
+            r.into_iter()
+                .map(|row| (row.name, row.count as usize))
+                .collect()
+        })
+        .unwrap_or_else(|| IndexMap::from([(pinned[col].to_string(), total as usize)]))
+    };
+
     Ok(Json(StatsResponse {
-        model: models.into_iter().map(|(k, c)| (k, c as usize)).collect(),
-        country: countries
-            .into_iter()
-            .map(|(k, c)| (k, c as usize))
-            .collect(),
-        version: versions.into_iter().map(|(k, c)| (k, c as usize)).collect(),
-        carrier: carriers.into_iter().map(|(k, c)| (k, c as usize)).collect(),
+        model: resolve(models, "model"),
+        country: resolve(countries, "country"),
+        version: resolve(versions, "version"),
+        carrier: resolve(carriers, "carrier"),
         total: total as usize,
     }))
 }
