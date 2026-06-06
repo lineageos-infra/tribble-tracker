@@ -80,7 +80,7 @@ pub enum GroupCol {
 }
 
 impl GroupCol {
-    fn as_str(self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         match self {
             Self::Model => "model",
             Self::Country => "country",

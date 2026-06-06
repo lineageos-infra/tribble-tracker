@@ -76,12 +76,11 @@ async fn filtered_stats(
 
 async fn fetch_group(
     state: &AppState,
-    col: &str,
     group: GroupCol,
     filters: &[FilterClause<'_>],
     pinned: &HashMap<&str, &str>,
 ) -> Result<Option<Vec<GroupedCount>>, DbError> {
-    if pinned.contains_key(col) {
+    if pinned.contains_key(group.as_str()) {
         Ok(None)
     } else {
         state
@@ -107,10 +106,10 @@ async fn filtered_stats_inner(
     let pinned = query.to_map();
 
     let (models, countries, versions, carriers, total) = tokio::try_join!(
-        fetch_group(&state, "model", GroupCol::Model, &filters, &pinned),
-        fetch_group(&state, "country", GroupCol::Country, &filters, &pinned),
-        fetch_group(&state, "version", GroupCol::Version, &filters, &pinned),
-        fetch_group(&state, "carrier", GroupCol::Carrier, &filters, &pinned),
+        fetch_group(&state, GroupCol::Model, &filters, &pinned),
+        fetch_group(&state, GroupCol::Country, &filters, &pinned),
+        fetch_group(&state, GroupCol::Version, &filters, &pinned),
+        fetch_group(&state, GroupCol::Carrier, &filters, &pinned),
         state.db.fetch_total(&filters),
     )?;
 
