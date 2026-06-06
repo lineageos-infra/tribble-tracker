@@ -220,7 +220,7 @@ async fn create_stat(
             country: &input.country,
             model: &input.name,
             official,
-            version: &version,
+            version,
             version_raw: &input.version,
         })
         .await?;
