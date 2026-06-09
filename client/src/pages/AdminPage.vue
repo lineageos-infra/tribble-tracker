@@ -6,18 +6,19 @@ SPDX-License-Identifier: Apache-2.0
 
 <script setup lang="ts">
 import {
-  banModel,
-  banVersion,
+  banModels,
+  banVersions,
   getInstallations,
   listBans,
-  unbanModel,
-  unbanVersion,
+  unbanModels,
+  unbanVersions,
   type BannedItem,
   type InstallationFilters,
   type TotalInstallationsItem
 } from '@/api/admin'
 import Button from '@/components/ui/Button.vue'
 import SnackBar from '@/components/ui/SnackBar.vue'
+import TextArea from '@/components/ui/TextArea.vue'
 import TextField from '@/components/ui/TextField.vue'
 import { formatNumber } from '@/utils/format'
 import { Ban, CircleX, LoaderCircle, RefreshCw, Search } from '@lucide/vue'
@@ -49,55 +50,55 @@ async function loadBans() {
 }
 
 // --- Ban model / version -----------------------------------------------------
-const modelInput = ref('')
-const modelNote = ref('')
-const modelBusy = ref(false)
+const modelsInput = ref('')
+const modelsNote = ref('')
+const modelsBusy = ref(false)
 
-async function submitBanModel() {
-  const model = modelInput.value.trim()
-  if (!model) return
-  modelBusy.value = true
+async function submitBanModels() {
+  const models = modelsInput.value.split('\n').filter(Boolean)
+  if (!models) return
+  modelsBusy.value = true
   try {
-    await banModel(model, modelNote.value.trim() || undefined)
-    notify(`Banned model "${model}"`)
-    modelInput.value = ''
-    modelNote.value = ''
+    await banModels(models, modelsNote.value.trim() || undefined)
+    notify(`Banned models: ${models.join(', ')}`)
+    modelsInput.value = ''
+    modelsNote.value = ''
     await loadBans()
   } catch (e) {
     notify((e as Error).message)
   } finally {
-    modelBusy.value = false
+    modelsBusy.value = false
   }
 }
 
-const versionInput = ref('')
-const versionNote = ref('')
-const versionBusy = ref(false)
+const versionsInput = ref('')
+const versionsNote = ref('')
+const versionsBusy = ref(false)
 
-async function submitBanVersion() {
-  const version = versionInput.value.trim()
-  if (!version) return
-  versionBusy.value = true
+async function submitBanVersions() {
+  const versions = versionsInput.value.split('\n').filter(Boolean)
+  if (!versions) return
+  versionsBusy.value = true
   try {
-    await banVersion(version, versionNote.value.trim() || undefined)
-    notify(`Banned version "${version}"`)
-    versionInput.value = ''
-    versionNote.value = ''
+    await banVersions(versions, versionsNote.value.trim() || undefined)
+    notify(`Banned versions: ${versions.join(', ')}`)
+    versionsInput.value = ''
+    versionsNote.value = ''
     await loadBans()
   } catch (e) {
     notify((e as Error).message)
   } finally {
-    versionBusy.value = false
+    versionsBusy.value = false
   }
 }
 
 async function deleteBan(item: BannedItem) {
   try {
     if (item.model) {
-      await unbanModel(item.model)
+      await unbanModels([item.model])
       notify(`Unbanned model "${item.model}"`)
     } else if (item.version) {
-      await unbanVersion(item.version)
+      await unbanVersions([item.version])
       notify(`Unbanned version "${item.version}"`)
     }
     await loadBans()
@@ -148,32 +149,32 @@ onMounted(loadBans)
 
     <div class="grid gap-6 lg:grid-cols-2">
       <section class="bg-surface-elevated flex flex-col gap-4 rounded-3xl p-5">
-        <h2 class="text-on-surface text-lg font-medium">Ban model</h2>
-        <TextField v-model="modelInput" label="Model" @submit="submitBanModel" />
-        <TextField v-model="modelNote" label="Note (optional)" @submit="submitBanModel" />
+        <h2 class="text-on-surface text-lg font-medium">Ban models</h2>
+        <TextArea v-model="modelsInput" label="Models" />
+        <TextField v-model="modelsNote" label="Note (optional)" @submit="submitBanModels" />
         <Button
           class="self-start"
-          :disabled="modelBusy || !modelInput.trim()"
-          @click="submitBanModel"
+          :disabled="modelsBusy || !modelsInput.trim()"
+          @click="submitBanModels"
         >
-          <LoaderCircle v-if="modelBusy" class="size-4 animate-spin" />
+          <LoaderCircle v-if="modelsBusy" class="size-4 animate-spin" />
           <Ban v-else class="size-4" />
-          Ban model
+          Ban models
         </Button>
       </section>
 
       <section class="bg-surface-elevated flex flex-col gap-4 rounded-3xl p-5">
-        <h2 class="text-on-surface text-lg font-medium">Ban version</h2>
-        <TextField v-model="versionInput" label="Version" @submit="submitBanVersion" />
-        <TextField v-model="versionNote" label="Note (optional)" @submit="submitBanVersion" />
+        <h2 class="text-on-surface text-lg font-medium">Ban versions</h2>
+        <TextArea v-model="versionsInput" label="Versions" />
+        <TextField v-model="versionsNote" label="Note (optional)" @submit="submitBanVersions" />
         <Button
           class="self-start"
-          :disabled="versionBusy || !versionInput.trim()"
-          @click="submitBanVersion"
+          :disabled="versionsBusy || !versionsInput.trim()"
+          @click="submitBanVersions"
         >
-          <LoaderCircle v-if="versionBusy" class="size-4 animate-spin" />
+          <LoaderCircle v-if="versionsBusy" class="size-4 animate-spin" />
           <Ban v-else class="size-4" />
-          Ban version
+          Ban versions
         </Button>
       </section>
     </div>

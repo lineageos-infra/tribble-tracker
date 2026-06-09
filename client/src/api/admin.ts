@@ -38,20 +38,20 @@ export function listBans(): Promise<BannedItem[]> {
   return request<BannedItem[]>('/internal/ban/list')
 }
 
-export function banModel(model: string, note?: string): Promise<string> {
-  return request('/internal/ban/model', 'POST', { model, note })
+export function banModels(models: string[], note?: string): Promise<string> {
+  return request('/internal/ban/models', 'POST', { models, note })
 }
 
-export function unbanModel(model: string): Promise<string> {
-  return request('/internal/ban/model', 'DELETE', { model })
+export function unbanModels(models: string[]): Promise<string> {
+  return request('/internal/ban/models', 'DELETE', { models })
 }
 
-export function banVersion(version: string, note?: string): Promise<string> {
-  return request('/internal/ban/version', 'POST', { version, note })
+export function banVersions(versions: string[], note?: string): Promise<string> {
+  return request('/internal/ban/versions', 'POST', { versions, note })
 }
 
-export function unbanVersion(version: string): Promise<string> {
-  return request('/internal/ban/version', 'DELETE', { version })
+export function unbanVersions(versions: string[]): Promise<string> {
+  return request('/internal/ban/versions', 'DELETE', { versions })
 }
 
 export function getInstallations(filters: InstallationFilters): Promise<TotalInstallationsItem[]> {
