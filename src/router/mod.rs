@@ -14,7 +14,6 @@ pub mod internal;
 
 pub(super) enum RouterError {
     Db(DbError),
-    BadRequest(&'static str),
 }
 
 impl From<DbError> for RouterError {
@@ -30,7 +29,6 @@ impl IntoResponse for RouterError {
                 eprintln!("database error: {:?}", e);
                 (StatusCode::INTERNAL_SERVER_ERROR, "sql error").into_response()
             }
-            RouterError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg).into_response(),
         }
     }
 }

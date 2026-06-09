@@ -30,8 +30,26 @@ async fn list_bans(
     Ok(Json(items))
 }
 
+fn deserialize_non_empty_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let v = Vec::<String>::deserialize(deserializer)?;
+
+    if v.is_empty() {
+        return Err(serde::de::Error::custom("vector cannot be empty"));
+    }
+
+    if v.iter().any(|s| s.is_empty()) {
+        return Err(serde::de::Error::custom("vector contains empty string"));
+    }
+
+    Ok(v)
+}
+
 #[derive(Deserialize)]
 struct BanModelInput {
+    #[serde(deserialize_with = "deserialize_non_empty_vec")]
     models: Vec<String>,
     #[serde(default)]
     note: Option<String>,
@@ -41,14 +59,6 @@ async fn ban_models(
     state: State<AppState>,
     input: Json<BanModelInput>,
 ) -> Result<&'static str, super::RouterError> {
-    if input.models.is_empty() {
-        return Err(super::RouterError::BadRequest("models are required"));
-    }
-    if input.models.iter().any(|x| x.is_empty()) {
-        return Err(super::RouterError::BadRequest(
-            "models cannot contain empty strings",
-        ));
-    }
     state
         .db
         .upsert_banned_models(&input.models, input.note.as_deref())
@@ -60,20 +70,13 @@ async fn unban_model(
     state: State<AppState>,
     input: Json<BanModelInput>,
 ) -> Result<&'static str, super::RouterError> {
-    if input.models.is_empty() {
-        return Err(super::RouterError::BadRequest("models are required"));
-    }
-    if input.models.iter().any(|x| x.is_empty()) {
-        return Err(super::RouterError::BadRequest(
-            "models cannot contain empty strings",
-        ));
-    }
     state.db.remove_banned_models(&input.models).await?;
     Ok("OK")
 }
 
 #[derive(Deserialize)]
 struct BanVersionInput {
+    #[serde(deserialize_with = "deserialize_non_empty_vec")]
     versions: Vec<String>,
     #[serde(default)]
     note: Option<String>,
@@ -83,14 +86,6 @@ async fn ban_versions(
     state: State<AppState>,
     input: Json<BanVersionInput>,
 ) -> Result<&'static str, super::RouterError> {
-    if input.versions.is_empty() {
-        return Err(super::RouterError::BadRequest("versions are required"));
-    }
-    if input.versions.iter().any(|x| x.is_empty()) {
-        return Err(super::RouterError::BadRequest(
-            "versions cannot contain empty strings",
-        ));
-    }
     state
         .db
         .upsert_banned_versions(&input.versions, input.note.as_deref())
@@ -102,14 +97,6 @@ async fn unban_version(
     state: State<AppState>,
     input: Json<BanVersionInput>,
 ) -> Result<&'static str, super::RouterError> {
-    if input.versions.is_empty() {
-        return Err(super::RouterError::BadRequest("versions are required"));
-    }
-    if input.versions.iter().any(|x| x.is_empty()) {
-        return Err(super::RouterError::BadRequest(
-            "versions cannot contain empty strings",
-        ));
-    }
     state.db.remove_banned_versions(&input.versions).await?;
     Ok("OK")
 }
