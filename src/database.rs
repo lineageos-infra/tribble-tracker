@@ -62,8 +62,8 @@ pub struct TotalInstallationsItem {
 
 pub struct NewStat<'a> {
     pub device_id: &'a str,
-    pub carrier: Option<&'a str>,
-    pub carrier_id: Option<&'a str>,
+    pub carrier: &'a str,
+    pub carrier_id: &'a str,
     pub country: &'a str,
     pub model: &'a str,
     pub official: bool,

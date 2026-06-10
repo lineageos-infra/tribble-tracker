@@ -143,9 +143,9 @@ struct StatInput {
     #[serde(rename = "device_country")]
     country: String,
     #[serde(rename = "device_carrier")]
-    carrier: Option<String>,
+    carrier: String,
     #[serde(rename = "device_carrier_id")]
-    carrier_id: Option<String>,
+    carrier_id: String,
 }
 
 static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\d\d\.\d)-").unwrap());
@@ -205,8 +205,8 @@ async fn create_stat(
         .db
         .upsert_stat(NewStat {
             device_id: &input.device_id,
-            carrier: input.carrier.as_deref(),
-            carrier_id: input.carrier_id.as_deref(),
+            carrier: &input.carrier,
+            carrier_id: &input.carrier_id,
             country: &input.country,
             model: &input.name,
             official,
