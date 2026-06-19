@@ -16,8 +16,8 @@ import {
   type InstallationFilters,
   type TotalInstallationsItem
 } from '@/api/admin'
-import Button from '@/components/ui/Button.vue'
 import SnackBar from '@/components/ui/SnackBar.vue'
+import SubmitButton from '@/components/ui/SubmitButton.vue'
 import TextArea from '@/components/ui/TextArea.vue'
 import TextField from '@/components/ui/TextField.vue'
 import { formatNumber } from '@/utils/format'
@@ -152,7 +152,7 @@ onMounted(loadBans)
         <h2 class="text-on-surface text-lg font-medium">Ban models</h2>
         <TextArea v-model="modelsInput" label="Models" />
         <TextField v-model="modelsNote" label="Note (optional)" @submit="submitBanModels" />
-        <Button
+        <SubmitButton
           class="self-start"
           :disabled="modelsBusy || !modelsInput.trim()"
           @click="submitBanModels"
@@ -160,14 +160,14 @@ onMounted(loadBans)
           <LoaderCircle v-if="modelsBusy" class="size-4 animate-spin" />
           <Ban v-else class="size-4" />
           Ban models
-        </Button>
+        </SubmitButton>
       </section>
 
       <section class="bg-surface-elevated flex flex-col gap-4 rounded-3xl p-5">
         <h2 class="text-on-surface text-lg font-medium">Ban versions</h2>
         <TextArea v-model="versionsInput" label="Versions" />
         <TextField v-model="versionsNote" label="Note (optional)" @submit="submitBanVersions" />
-        <Button
+        <SubmitButton
           class="self-start"
           :disabled="versionsBusy || !versionsInput.trim()"
           @click="submitBanVersions"
@@ -175,7 +175,7 @@ onMounted(loadBans)
           <LoaderCircle v-if="versionsBusy" class="size-4 animate-spin" />
           <Ban v-else class="size-4" />
           Ban versions
-        </Button>
+        </SubmitButton>
       </section>
     </div>
 
@@ -240,11 +240,11 @@ onMounted(loadBans)
           @submit="queryInstallations"
         />
       </div>
-      <Button class="self-start" :disabled="installationsBusy" @click="queryInstallations">
+      <SubmitButton class="self-start" :disabled="installationsBusy" @click="queryInstallations">
         <LoaderCircle v-if="installationsBusy" class="size-4 animate-spin" />
         <Search v-else class="size-4" />
         Query
-      </Button>
+      </SubmitButton>
 
       <p v-if="installationsError" class="text-sm text-red-400">{{ installationsError }}</p>
       <template v-else-if="installations">
