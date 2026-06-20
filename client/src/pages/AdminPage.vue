@@ -36,6 +36,9 @@ function notify(message: string) {
 const bans = ref<BannedItem[]>([])
 const bansLoading = ref(false)
 const bansError = ref<string | null>(null)
+const totalAffectedInstallations = computed(() =>
+  bans.value.reduce((sum, item) => sum + (item.affected_installations ?? 0), 0)
+)
 
 async function loadBans() {
   bansLoading.value = true
@@ -229,6 +232,12 @@ onMounted(loadBans)
             </tr>
           </tbody>
         </table>
+        <p
+          v-if="totalAffectedInstallations"
+          class="text-on-surface-muted mt-2 text-center text-xs tabular-nums"
+        >
+          Total affected installations: {{ formatNumber(totalAffectedInstallations) }}
+        </p>
       </div>
     </section>
 
