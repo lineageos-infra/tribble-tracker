@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT version, model, note FROM banned",
+  "query": "\n            SELECT ban.version, ban.model, ban.note, COUNT(stat.device_id) AS affected_installations\n            FROM banned ban\n            LEFT JOIN stats stat ON (ban.version IS NOT NULL AND stat.version_raw = ban.version) OR (ban.model IS NOT NULL AND stat.model = ban.model)\n            GROUP BY ban.version, ban.model, ban.note\n            ",
   "describe": {
     "columns": [
       {
@@ -35,6 +35,12 @@
             "name": "note"
           }
         }
+      },
+      {
+        "name": "affected_installations",
+        "ordinal": 3,
+        "type_info": "Integer",
+        "origin": "Expression"
       }
     ],
     "parameters": {
@@ -43,8 +49,9 @@
     "nullable": [
       true,
       true,
-      true
+      true,
+      false
     ]
   },
-  "hash": "8d26eca206e7723616a1bf6011cac27f28645f28c6ed52e05053e86d565c8ae9"
+  "hash": "b9d299f814a077ba1fcd3eaf91d9b6de1eb9f46d5a051e5f478e316f3fa65ba4"
 }

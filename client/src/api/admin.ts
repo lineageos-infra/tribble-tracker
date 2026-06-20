@@ -6,6 +6,7 @@ export interface BannedItem {
   version: string | null
   model: string | null
   note: string | null
+  affected_installations: number | null
 }
 
 export interface TotalInstallationsItem {

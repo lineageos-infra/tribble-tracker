@@ -203,6 +203,7 @@ onMounted(loadBans)
               <th class="px-2 py-1 font-medium">Model</th>
               <th class="px-2 py-1 font-medium">Version</th>
               <th class="px-2 py-1 font-medium">Note</th>
+              <th class="px-2 py-1 font-medium">Affected Installations</th>
               <th class="px-2 py-1 font-medium">Actions</th>
             </tr>
           </thead>
@@ -211,6 +212,7 @@ onMounted(loadBans)
               <td class="text-on-surface px-2 py-1.5">{{ item.model ?? '—' }}</td>
               <td class="text-on-surface px-2 py-1.5">{{ item.version ?? '—' }}</td>
               <td class="text-on-surface-muted px-2 py-1.5">{{ item.note ?? '—' }}</td>
+              <td class="text-on-surface px-2 py-1.5">{{ item.affected_installations ?? 0 }}</td>
               <td class="text-on-surface px-2 py-1.5">
                 <button
                   type="button"

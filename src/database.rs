@@ -51,6 +51,7 @@ pub struct BannedItem {
     pub version: Option<String>,
     pub model: Option<String>,
     pub note: Option<String>,
+    pub affected_installations: Option<i64>,
 }
 
 #[derive(Serialize, sqlx::FromRow)]
@@ -229,9 +230,16 @@ impl Database {
     ///
     /// Returns a [`DbError`] if the query fails.
     pub async fn list_bans(&self) -> Result<Vec<BannedItem>, DbError> {
-        let items = sqlx::query_as!(BannedItem, r#"SELECT version, model, note FROM banned"#)
-            .fetch_all(&self.pool)
-            .await?;
+        // join with stats to get affected installations count
+        let items = sqlx::query_as!(
+            BannedItem,
+            r#"
+            SELECT ban.version, ban.model, ban.note, COUNT(stat.device_id) AS affected_installations
+            FROM banned ban
+            LEFT JOIN stats stat ON (ban.version IS NOT NULL AND stat.version_raw = ban.version) OR (ban.model IS NOT NULL AND stat.model = ban.model)
+            GROUP BY ban.version, ban.model, ban.note
+            "#
+        ).fetch_all(&self.pool).await?;
         Ok(items)
     }
 
