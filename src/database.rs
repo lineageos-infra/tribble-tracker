@@ -92,6 +92,12 @@ impl GroupCol {
     }
 }
 
+impl fmt::Display for GroupCol {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 #[derive(sqlx::FromRow)]
 pub struct GroupedCount {
     pub name: String,
@@ -177,14 +183,13 @@ impl Database {
         group: GroupCol,
         filters: &[FilterClause<'_>],
     ) -> Result<Vec<GroupedCount>, DbError> {
-        let col = group.as_str();
         let mut qb = sqlx::QueryBuilder::new(format!(
-            "SELECT {col} as name, COUNT(*) as count FROM stats"
+            "SELECT {group} as name, COUNT(*) as count FROM stats"
         ));
 
         Self::append_filters(&mut qb, filters);
 
-        qb.push(format!(" GROUP BY {col} ORDER BY count DESC LIMIT 250"));
+        qb.push(format!(" GROUP BY {group} ORDER BY count DESC LIMIT 250"));
         let rows = qb
             .build_query_as::<GroupedCount>()
             .fetch_all(&self.pool)
