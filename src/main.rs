@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Start tasks
     tasks::spawn_stats_cleanup(state.db.clone());
-    tasks::spawn_banned_refresh(state.db.clone(), state.banned.clone());
+    tasks::spawn_banned_refresh(state.db.clone(), state.banned.clone()).await;
 
     // Production Path, use vite directly in development
     let client = ServeDir::new("client").fallback(ServeFile::new("client/index.html"));
