@@ -234,12 +234,23 @@ impl Database {
         let items = sqlx::query_as!(
             BannedItem,
             r#"
-            SELECT ban.version, ban.model, ban.note, COUNT(stat.device_id) AS affected_installations
-            FROM banned ban
-            LEFT JOIN stats stat ON (ban.version IS NOT NULL AND stat.version_raw = ban.version) OR (ban.model IS NOT NULL AND stat.model = ban.model)
-            GROUP BY ban.version, ban.model, ban.note
+            SELECT
+                ban.version,
+                ban.model,
+                ban.note,
+                (
+                    SELECT COUNT(*)
+                    FROM stats stat
+                    WHERE
+                        (ban.version IS NOT NULL AND stat.version_raw = ban.version)
+                        OR
+                        (ban.model IS NOT NULL AND stat.model = ban.model)
+                ) AS affected_installations
+            FROM banned ban;
             "#
-        ).fetch_all(&self.pool).await?;
+        )
+        .fetch_all(&self.pool)
+        .await?;
         Ok(items)
     }
 

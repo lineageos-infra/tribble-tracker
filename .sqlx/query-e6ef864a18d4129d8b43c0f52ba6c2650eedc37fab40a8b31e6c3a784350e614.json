@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n            SELECT ban.version, ban.model, ban.note, COUNT(stat.device_id) AS affected_installations\n            FROM banned ban\n            LEFT JOIN stats stat ON (ban.version IS NOT NULL AND stat.version_raw = ban.version) OR (ban.model IS NOT NULL AND stat.model = ban.model)\n            GROUP BY ban.version, ban.model, ban.note\n            ",
+  "query": "\n            SELECT\n                ban.version,\n                ban.model,\n                ban.note,\n                (\n                    SELECT COUNT(*)\n                    FROM stats stat\n                    WHERE\n                        (ban.version IS NOT NULL AND stat.version_raw = ban.version)\n                        OR\n                        (ban.model IS NOT NULL AND stat.model = ban.model)\n                ) AS affected_installations\n            FROM banned ban;\n            ",
   "describe": {
     "columns": [
       {
@@ -53,5 +53,5 @@
       false
     ]
   },
-  "hash": "b9d299f814a077ba1fcd3eaf91d9b6de1eb9f46d5a051e5f478e316f3fa65ba4"
+  "hash": "e6ef864a18d4129d8b43c0f52ba6c2650eedc37fab40a8b31e6c3a784350e614"
 }
