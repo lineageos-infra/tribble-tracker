@@ -72,7 +72,7 @@ pub struct NewStat<'a> {
     pub version_raw: &'a str,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq)]
 pub enum GroupCol {
     Model,
     Country,
@@ -105,7 +105,7 @@ pub struct GroupedCount {
 }
 
 pub struct FilterClause<'a> {
-    pub column: &'static str,
+    pub column: GroupCol,
     pub value: &'a str,
 }
 
@@ -262,7 +262,7 @@ impl Database {
     /// # Errors
     ///
     /// Returns a [`DbError`] if the delete query fails.
-    pub async fn remove_bans(&self, col: &str, values: &[String]) -> Result<(), DbError> {
+    pub async fn remove_bans(&self, col: GroupCol, values: &[String]) -> Result<(), DbError> {
         let mut qb = sqlx::QueryBuilder::new(format!("DELETE FROM banned WHERE {col}"));
 
         let mut separated = qb.separated(", ");
@@ -281,7 +281,7 @@ impl Database {
     /// Returns a [`DbError`] if the upsert query fails.
     pub async fn upsert_bans(
         &self,
-        col: &str,
+        col: GroupCol,
         values: &[String],
         note: Option<&str>,
     ) -> Result<(), DbError> {

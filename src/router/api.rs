@@ -36,12 +36,12 @@ pub struct FilterQuery {
 }
 
 impl FilterQuery {
-    pub fn iter(&self) -> impl Iterator<Item = (&'static str, &str)> {
+    pub fn iter(&self) -> impl Iterator<Item = (GroupCol, &str)> {
         [
-            self.model.as_deref().map(|v| ("model", v)),
-            self.country.as_deref().map(|v| ("country", v)),
-            self.version.as_deref().map(|v| ("version", v)),
-            self.carrier.as_deref().map(|v| ("carrier", v)),
+            self.model.as_deref().map(|v| (GroupCol::Model, v)),
+            self.country.as_deref().map(|v| (GroupCol::Country, v)),
+            self.version.as_deref().map(|v| (GroupCol::Version, v)),
+            self.carrier.as_deref().map(|v| (GroupCol::Carrier, v)),
         ]
         .into_iter()
         .flatten()
@@ -55,7 +55,7 @@ impl FilterQuery {
     }
 
     #[must_use]
-    pub fn to_map(&self) -> HashMap<&'static str, &str> {
+    pub fn to_map(&self) -> HashMap<GroupCol, &str> {
         self.iter().collect()
     }
 }
@@ -80,9 +80,9 @@ async fn fetch_group(
     state: &AppState,
     group: GroupCol,
     filters: &[FilterClause<'_>],
-    pinned: &HashMap<&str, &str>,
+    pinned: &HashMap<GroupCol, &str>,
 ) -> Result<Option<Vec<GroupedCount>>, DbError> {
-    if pinned.contains_key(group.as_str()) {
+    if pinned.contains_key(&group) {
         Ok(None)
     } else {
         state
@@ -115,18 +115,18 @@ async fn filtered_stats_inner(
         state.db.fetch_total(&filters),
     )?;
 
-    let resolve = |rows: Option<Vec<GroupedCount>>, col: &str| -> IndexMap<String, i64> {
+    let resolve = |rows: Option<Vec<GroupedCount>>, col: GroupCol| -> IndexMap<String, i64> {
         match rows {
             Some(rows) => rows.into_iter().map(|row| (row.name, row.count)).collect(),
-            None => IndexMap::from([(pinned[col].to_string(), total)]),
+            None => IndexMap::from([(pinned[&col].to_string(), total)]),
         }
     };
 
     Ok(Json(StatsResponse {
-        model: resolve(models, "model"),
-        country: resolve(countries, "country"),
-        version: resolve(versions, "version"),
-        carrier: resolve(carriers, "carrier"),
+        model: resolve(models, GroupCol::Model),
+        country: resolve(countries, GroupCol::Country),
+        version: resolve(versions, GroupCol::Version),
+        carrier: resolve(carriers, GroupCol::Carrier),
         total,
     }))
 }
