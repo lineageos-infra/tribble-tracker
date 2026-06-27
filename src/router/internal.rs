@@ -15,6 +15,7 @@ use serde::Deserialize;
 pub fn internal_router() -> Router<AppState> {
     Router::new()
         .route("/ban/list", get(list_bans))
+        .route("/ban/reap", post(reap_bans))
         .route("/ban/models", delete(unban_model))
         .route("/ban/models", post(ban_models))
         .route("/ban/versions", delete(unban_version))
@@ -27,6 +28,11 @@ async fn list_bans(
 ) -> Result<Json<Vec<BannedItem>>, super::RouterError> {
     let items = state.db.list_bans().await?;
     Ok(Json(items))
+}
+
+async fn reap_bans(State(state): State<AppState>) -> Result<String, super::RouterError> {
+    let rows_affected = state.db.reap_bans().await?;
+    Ok(rows_affected.to_string())
 }
 
 fn deserialize_non_empty_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>

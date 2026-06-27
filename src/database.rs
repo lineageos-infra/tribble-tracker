@@ -261,6 +261,33 @@ impl Database {
 
     /// # Errors
     ///
+    /// Returns a [`DbError`] if the purge query fails.
+    pub async fn reap_bans(&self) -> Result<u64, DbError> {
+        let bans = self.list_bans().await?;
+        let mut qb = sqlx::QueryBuilder::new("DELETE FROM stats WHERE ");
+
+        qb.push("version_raw IN (");
+        {
+            let mut separated = qb.separated(", ");
+            for version in bans.iter().flat_map(|b| b.version.as_ref()) {
+                separated.push_bind(version);
+            }
+        }
+        qb.push(") OR model IN (");
+        {
+            let mut separated = qb.separated(", ");
+            for model in bans.iter().flat_map(|b| b.model.as_ref()) {
+                separated.push_bind(model);
+            }
+        }
+        qb.push(")");
+
+        let result = qb.build().execute(&self.pool).await?;
+        Ok(result.rows_affected())
+    }
+
+    /// # Errors
+    ///
     /// Returns a [`DbError`] if the delete query fails.
     pub async fn remove_bans(&self, col: GroupCol, values: &[String]) -> Result<(), DbError> {
         let mut qb = sqlx::QueryBuilder::new(format!("DELETE FROM banned WHERE {col}"));

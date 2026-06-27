@@ -39,6 +39,10 @@ export function listBans(): Promise<BannedItem[]> {
   return request<BannedItem[]>('/internal/ban/list')
 }
 
+export function reapBans(): Promise<number> {
+  return request<number>('/internal/ban/reap', 'POST')
+}
+
 export function banModels(models: string[], note?: string): Promise<string> {
   return request('/internal/ban/models', 'POST', { models, note })
 }

@@ -10,6 +10,7 @@ import {
   banVersions,
   getInstallations,
   listBans,
+  reapBans,
   unbanModels,
   unbanVersions,
   type BannedItem,
@@ -49,6 +50,16 @@ async function loadBans() {
     bansError.value = (e as Error).message
   } finally {
     bansLoading.value = false
+  }
+}
+
+async function reapBanned() {
+  try {
+    const rows_affected = await reapBans()
+    notify(`Deleted ${rows_affected} installations`)
+    await loadBans()
+  } catch (e) {
+    notify((e as Error).message)
   }
 }
 
@@ -185,15 +196,26 @@ onMounted(loadBans)
     <section class="bg-surface-elevated flex flex-col gap-4 rounded-3xl p-5">
       <header class="flex items-baseline justify-between gap-2">
         <h2 class="text-on-surface text-lg font-medium">Banned items</h2>
-        <button
-          type="button"
-          class="border-outline-variant text-on-surface hover:border-brand-primary inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition disabled:opacity-50"
-          :disabled="bansLoading"
-          @click="loadBans"
-        >
-          <RefreshCw class="size-3.5" :class="bansLoading && 'animate-spin'" />
-          Refresh
-        </button>
+        <div>
+          <button
+            type="button"
+            class="border-outline-variant text-on-surface hover:border-brand-primary mr-2 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition disabled:opacity-50"
+            :disabled="bansLoading"
+            @click="reapBanned"
+          >
+            <CircleX class="size-3.5" />
+            Reap
+          </button>
+          <button
+            type="button"
+            class="border-outline-variant text-on-surface hover:border-brand-primary inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition disabled:opacity-50"
+            :disabled="bansLoading"
+            @click="loadBans"
+          >
+            <RefreshCw class="size-3.5" :class="bansLoading && 'animate-spin'" />
+            Refresh
+          </button>
+        </div>
       </header>
 
       <p v-if="bansError" class="text-sm text-red-400">{{ bansError }}</p>
