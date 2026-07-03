@@ -113,7 +113,7 @@ async fn installations(
     State(state): State<AppState>,
     Query(query): Query<FilterQuery>,
 ) -> Result<Json<Vec<TotalInstallationsItem>>, super::RouterError> {
-    let filters = query.to_filters();
+    let filters = query.to_map();
     let items = state.db.fetch_total_installations(&filters).await?;
     Ok(Json(items))
 }

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+use std::collections::HashMap;
 use std::env;
 use std::fmt;
 
@@ -104,11 +105,6 @@ pub struct GroupedCount {
     pub count: i64,
 }
 
-pub struct FilterClause<'a> {
-    pub column: GroupCol,
-    pub value: &'a str,
-}
-
 impl Database {
     /// # Errors
     ///
@@ -162,15 +158,18 @@ impl Database {
         Ok(())
     }
 
-    fn append_filters(qb: &mut sqlx::QueryBuilder<sqlx::Sqlite>, filters: &[FilterClause<'_>]) {
+    fn append_filters(
+        qb: &mut sqlx::QueryBuilder<sqlx::Sqlite>,
+        filters: &HashMap<GroupCol, &str>,
+    ) {
         if !filters.is_empty() {
             qb.push(" WHERE ");
             let mut separated = qb.separated(" AND ");
-            for filter in filters {
+            for (column, value) in filters {
                 separated
-                    .push(filter.column)
+                    .push(column)
                     .push_unseparated(" = ")
-                    .push_bind_unseparated(filter.value);
+                    .push_bind_unseparated(value);
             }
         }
     }
@@ -181,7 +180,7 @@ impl Database {
     pub async fn fetch_grouped_counts(
         &self,
         group: GroupCol,
-        filters: &[FilterClause<'_>],
+        filters: &HashMap<GroupCol, &str>,
     ) -> Result<Vec<GroupedCount>, DbError> {
         let mut qb = sqlx::QueryBuilder::new(format!(
             "SELECT {group} as name, COUNT(*) as count FROM stats"
@@ -200,7 +199,7 @@ impl Database {
     /// # Errors
     ///
     /// Returns a [`DbError`] if the query fails.
-    pub async fn fetch_total(&self, filters: &[FilterClause<'_>]) -> Result<i64, DbError> {
+    pub async fn fetch_total(&self, filters: &HashMap<GroupCol, &str>) -> Result<i64, DbError> {
         let mut qb = sqlx::QueryBuilder::new("SELECT COUNT(*) FROM stats");
 
         Self::append_filters(&mut qb, filters);
@@ -212,7 +211,10 @@ impl Database {
     /// # Errors
     ///
     /// Returns a [`DbError`] if the query fails.
-    pub async fn fetch_official_total(&self, filters: &[FilterClause<'_>]) -> Result<i64, DbError> {
+    pub async fn fetch_official_total(
+        &self,
+        filters: &HashMap<GroupCol, &str>,
+    ) -> Result<i64, DbError> {
         let mut qb = sqlx::QueryBuilder::new("SELECT COUNT(*) FROM stats");
 
         Self::append_filters(&mut qb, filters);
@@ -232,7 +234,7 @@ impl Database {
     /// Returns a [`DbError`] if the query fails.
     pub async fn fetch_total_installations(
         &self,
-        filters: &[FilterClause<'_>],
+        filters: &HashMap<GroupCol, &str>,
     ) -> Result<Vec<TotalInstallationsItem>, DbError> {
         let mut qb = sqlx::QueryBuilder::new(
             "SELECT model, version_raw, COUNT(*) AS installations FROM stats",
