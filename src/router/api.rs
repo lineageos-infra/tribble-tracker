@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::AppState;
-use crate::database::{DbError, FilterClause, GroupCol, GroupedCount, NewStat};
+use crate::database::{DbError, GroupCol, GroupedCount, NewStat};
 use axum::{
     Json, Router,
     extract::{Query, State, rejection::JsonRejection},
@@ -53,13 +53,6 @@ impl FilterQuery {
     }
 
     #[must_use]
-    pub fn to_filters(&self) -> Vec<FilterClause<'_>> {
-        self.iter()
-            .map(|(column, value)| FilterClause { column, value })
-            .collect()
-    }
-
-    #[must_use]
     pub fn to_map(&self) -> HashMap<GroupCol, &str> {
         self.iter().collect()
     }
@@ -85,7 +78,7 @@ async fn filtered_stats(
 async fn fetch_group(
     state: &AppState,
     group: GroupCol,
-    filters: &[FilterClause<'_>],
+    filters: &HashMap<GroupCol, &str>,
     pinned: &HashMap<GroupCol, &str>,
 ) -> Result<Option<Vec<GroupedCount>>, DbError> {
     if pinned.contains_key(&group) {
@@ -110,7 +103,7 @@ async fn filtered_stats_inner(
     state: AppState,
     query: FilterQuery,
 ) -> Result<Json<StatsResponse>, super::RouterError> {
-    let filters = query.to_filters();
+    let filters = query.to_map();
     let pinned = query.to_map();
 
     let (models, countries, versions, carriers, total, official) = tokio::try_join!(
