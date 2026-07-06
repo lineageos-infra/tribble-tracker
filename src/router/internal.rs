@@ -21,6 +21,13 @@ pub fn internal_router() -> Router<AppState> {
         .route("/ban/versions", delete(unban_version))
         .route("/ban/versions", post(ban_versions))
         .route("/installations", get(installations))
+        .route("/_headers_", get(headers))
+}
+
+async fn headers(
+    header_map: axum::http::HeaderMap,
+) -> String {
+    format!("{header_map:#?}")
 }
 
 async fn list_bans(
