@@ -12,7 +12,16 @@ export interface BannedItem {
 export interface TotalInstallationsItem {
   model: string
   version_raw: string
+  asn: number
   installations: number
+}
+
+export interface TopAsnItem {
+  asn: number
+  asn_owner: string
+  devices: number
+  top_model: string
+  top_model_count: number
 }
 
 export interface InstallationFilters {
@@ -20,6 +29,7 @@ export interface InstallationFilters {
   country?: string
   version?: string
   carrier?: string
+  asn?: string
 }
 
 async function request<T>(url: string, method?: string, body?: unknown): Promise<T> {
@@ -57,6 +67,10 @@ export function banVersions(versions: string[], note?: string): Promise<string> 
 
 export function unbanVersions(versions: string[]): Promise<string> {
   return request('/internal/ban/versions', 'DELETE', { versions })
+}
+
+export function getTopAsns(): Promise<TopAsnItem[]> {
+  return request<TopAsnItem[]>('/internal/asn')
 }
 
 export function getInstallations(filters: InstallationFilters): Promise<TotalInstallationsItem[]> {

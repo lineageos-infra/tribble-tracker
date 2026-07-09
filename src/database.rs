@@ -58,7 +58,17 @@ pub struct BannedItem {
 pub struct TotalInstallationsItem {
     pub model: String,
     pub version_raw: String,
+    pub asn: i64,
     pub installations: i64,
+}
+
+#[derive(Serialize)]
+pub struct TopAsnItem {
+    pub asn: i64,
+    pub asn_owner: String,
+    pub devices: i64,
+    pub top_model: String,
+    pub top_model_count: i64,
 }
 
 pub struct NewStat<'a> {
@@ -70,6 +80,7 @@ pub struct NewStat<'a> {
     pub official: bool,
     pub version: &'a str,
     pub version_raw: &'a str,
+    pub asn: i64,
 }
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq)]
@@ -78,6 +89,7 @@ pub enum GroupCol {
     Country,
     Version,
     Carrier,
+    Asn,
 }
 
 impl GroupCol {
@@ -88,6 +100,7 @@ impl GroupCol {
             Self::Country => "country",
             Self::Version => "version",
             Self::Carrier => "carrier",
+            Self::Asn => "asn",
         }
     }
 }
@@ -137,8 +150,8 @@ impl Database {
     pub async fn upsert_stat(&self, stat: NewStat<'_>) -> Result<(), DbError> {
         sqlx::query!(
             r#"
-            INSERT INTO stats (device_id, carrier, carrier_id, country, model, official, version, version_raw)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO stats (device_id, carrier, carrier_id, country, model, official, version, version_raw, asn)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (device_id) DO UPDATE SET
                 carrier = excluded.carrier,
                 carrier_id = excluded.carrier_id,
@@ -146,7 +159,8 @@ impl Database {
                 model = excluded.model,
                 official = excluded.official,
                 version = excluded.version,
-                version_raw = excluded.version_raw
+                version_raw = excluded.version_raw,
+                asn = IIF(excluded.asn = 0, asn, excluded.asn)
             "#,
             stat.device_id,
             stat.carrier,
@@ -156,6 +170,7 @@ impl Database {
             stat.official,
             stat.version,
             stat.version_raw,
+            stat.asn,
         )
         .execute(&self.pool)
         .await?;
@@ -235,12 +250,12 @@ impl Database {
         filters: &[FilterClause<'_>],
     ) -> Result<Vec<TotalInstallationsItem>, DbError> {
         let mut qb = sqlx::QueryBuilder::new(
-            "SELECT model, version_raw, COUNT(*) AS installations FROM stats",
+            "SELECT model, version_raw, asn, COUNT(*) AS installations FROM stats",
         );
 
         Self::append_filters(&mut qb, filters);
 
-        qb.push(" GROUP BY version_raw ORDER BY installations DESC");
+        qb.push(" GROUP BY version_raw, asn ORDER BY installations DESC");
 
         let items = qb
             .build_query_as::<TotalInstallationsItem>()
@@ -279,6 +294,37 @@ impl Database {
 
     /// # Errors
     ///
+    /// Returns a [`DbError`] if the query fails.
+    pub async fn fetch_top_asns(&self) -> Result<Vec<TopAsnItem>, DbError> {
+        // bare `model` picks the value from the MAX(devices) row (SQLite argmax)
+        let items = sqlx::query_as!(
+            TopAsnItem,
+            r#"
+            WITH by_model AS (
+                SELECT asn, model, COUNT(*) AS devices
+                FROM stats
+                WHERE asn != 0
+                GROUP BY asn, model
+            )
+            SELECT
+                asn AS "asn!: i64",
+                "" AS "asn_owner!: String",
+                SUM(devices) AS "devices!: i64",
+                model AS "top_model!: String",
+                MAX(devices) AS "top_model_count!: i64"
+            FROM by_model
+            GROUP BY asn
+            ORDER BY SUM(devices) DESC
+            LIMIT 50
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(items)
+    }
+
+    /// # Errors
+    ///
     /// Returns a [`DbError`] if the purge query fails.
     pub async fn reap_bans(&self) -> Result<u64, DbError> {
         let bans = self.list_bans().await?;
@@ -287,14 +333,14 @@ impl Database {
         qb.push("version_raw IN (");
         {
             let mut separated = qb.separated(", ");
-            for version in bans.iter().flat_map(|b| b.version.as_ref()) {
+            for version in bans.iter().filter_map(|b| b.version.as_ref()) {
                 separated.push_bind(version);
             }
         }
         qb.push(") OR model IN (");
         {
             let mut separated = qb.separated(", ");
-            for model in bans.iter().flat_map(|b| b.model.as_ref()) {
+            for model in bans.iter().filter_map(|b| b.model.as_ref()) {
                 separated.push_bind(model);
             }
         }

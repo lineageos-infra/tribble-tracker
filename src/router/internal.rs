@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::AppState;
-use crate::database::{BannedItem, GroupCol, TotalInstallationsItem};
+use crate::database::{BannedItem, FilterClause, GroupCol, TopAsnItem, TotalInstallationsItem};
 use crate::router::api::FilterQuery;
 use axum::{
     Json, Router,
@@ -21,6 +21,7 @@ pub fn internal_router() -> Router<AppState> {
         .route("/ban/versions", delete(unban_version))
         .route("/ban/versions", post(ban_versions))
         .route("/installations", get(installations))
+        .route("/asn", get(top_asns))
 }
 
 async fn list_bans(
@@ -109,11 +110,39 @@ async fn unban_version(
     Ok("OK")
 }
 
+async fn top_asns(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<TopAsnItem>>, super::RouterError> {
+    let mut items = state.db.fetch_top_asns().await?;
+
+    for item in &mut items {
+        item.asn_owner = match crate::asn::lookup_asn_owner(&state.asn_db, item.asn as u32) {
+            Some(name) => name,
+            None => "Unknown".to_string(),
+        };
+    }
+
+    Ok(Json(items))
+}
+
+#[derive(Deserialize)]
+struct AsnFilter {
+    #[serde(default)]
+    asn: Option<String>,
+}
+
 async fn installations(
     State(state): State<AppState>,
     Query(query): Query<FilterQuery>,
+    Query(asn): Query<AsnFilter>,
 ) -> Result<Json<Vec<TotalInstallationsItem>>, super::RouterError> {
-    let filters = query.to_filters();
+    let mut filters = query.to_filters();
+    if let Some(value) = asn.asn.as_deref() {
+        filters.push(FilterClause {
+            column: GroupCol::Asn,
+            value,
+        });
+    }
     let items = state.db.fetch_total_installations(&filters).await?;
     Ok(Json(items))
 }

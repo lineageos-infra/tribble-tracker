@@ -1,0 +1,59 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            WITH by_model AS (\n                SELECT asn, model, COUNT(*) AS devices\n                FROM stats\n                WHERE asn != 0\n                GROUP BY asn, model\n            )\n            SELECT\n                asn AS \"asn!: i64\",\n                \"\" AS \"asn_owner!: String\",\n                SUM(devices) AS \"devices!: i64\",\n                model AS \"top_model!: String\",\n                MAX(devices) AS \"top_model_count!: i64\"\n            FROM by_model\n            GROUP BY asn\n            ORDER BY SUM(devices) DESC\n            LIMIT 50\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "asn!: i64",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "stats",
+            "name": "asn"
+          }
+        }
+      },
+      {
+        "name": "asn_owner!: String",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "name": "devices!: i64",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": "Expression"
+      },
+      {
+        "name": "top_model!: String",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "stats",
+            "name": "model"
+          }
+        }
+      },
+      {
+        "name": "top_model_count!: i64",
+        "ordinal": 4,
+        "type_info": "Integer",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "3dff95f61ab6a1bc480ed9e1b693d61f3f0e44e0832ca362ef8a53e8293c4851"
+}

@@ -5,3 +5,5 @@ dev.db-shm
 dev.db-wal
 
 .env
+
+ip2asn-combined.tsv.gz

@@ -9,6 +9,7 @@ use axum::{
     extract::{Query, State, rejection::JsonRejection},
     routing::get,
 };
+use axum_client_ip::ClientIp;
 use axum_extra::{TypedHeader, headers::UserAgent};
 use cached::macros::cached;
 use indexmap::IndexMap;
@@ -157,6 +158,7 @@ static DEVICE_ID_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9A-F
 
 async fn create_stat(
     state: State<AppState>,
+    client_ip: Result<ClientIp, axum_client_ip::Rejection>,
     user_agent: Option<TypedHeader<UserAgent>>,
     input: Result<Json<StatInput>, JsonRejection>,
 ) -> Result<&'static str, super::RouterError> {
@@ -201,6 +203,11 @@ async fn create_stat(
         input.country.make_ascii_uppercase();
     }
 
+    let asn = client_ip
+        .ok()
+        .and_then(|ClientIp(ip)| crate::asn::lookup(&state.asn_db, ip))
+        .unwrap_or(0);
+
     state
         .db
         .upsert_stat(NewStat {
@@ -212,6 +219,7 @@ async fn create_stat(
             official,
             version,
             version_raw: &input.version,
+            asn,
         })
         .await?;
 
