@@ -167,10 +167,21 @@ impl Database {
             qb.push(" WHERE ");
             let mut separated = qb.separated(" AND ");
             for filter in filters {
+                let value = match filter.column {
+                    GroupCol::Country => {
+                        if filter.value.eq_ignore_ascii_case("Unknown") {
+                            "Unknown"
+                        } else {
+                            &filter.value.to_uppercase()
+                        }
+                    }
+                    _ => filter.value,
+                };
+
                 separated
                     .push(filter.column)
                     .push_unseparated(" = ")
-                    .push_bind_unseparated(filter.value);
+                    .push_bind_unseparated(value);
             }
         }
     }
