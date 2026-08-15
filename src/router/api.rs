@@ -32,6 +32,8 @@ pub struct FilterQuery {
     #[serde(default)]
     version: Option<String>,
     #[serde(default)]
+    version_raw: Option<String>,
+    #[serde(default)]
     carrier: Option<String>,
 }
 
@@ -41,6 +43,7 @@ impl FilterQuery {
             self.model.as_deref().map(|v| (GroupCol::Model, v)),
             self.country.as_deref().map(|v| (GroupCol::Country, v)),
             self.version.as_deref().map(|v| (GroupCol::Version, v)),
+            self.version_raw.as_deref().map(|v| (GroupCol::VersionRaw, v)),
             self.carrier.as_deref().map(|v| (GroupCol::Carrier, v)),
         ]
         .into_iter()

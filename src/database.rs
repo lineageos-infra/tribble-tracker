@@ -77,6 +77,7 @@ pub enum GroupCol {
     Model,
     Country,
     Version,
+    VersionRaw,
     Carrier,
 }
 
@@ -87,6 +88,7 @@ impl GroupCol {
             Self::Model => "model",
             Self::Country => "country",
             Self::Version => "version",
+            Self::VersionRaw => "version_raw",
             Self::Carrier => "carrier",
         }
     }
