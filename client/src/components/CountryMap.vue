@@ -98,6 +98,7 @@ const pointTooltip = (d: TopoJSONMapPoint<Point>) => {
         :topojson="WorldMap110mAlphaTopoJSON"
         :point-radius="(d: Point) => radiusForCount(d.count)"
         :point-label="(d: Point) => formatNumber(d.count, true)"
+        :point-label-text-color="() => 'var(--vis-map-point-label-text-color)'"
         :cluster-radius="clusterRadius"
         :cluster-label="clusterLabel"
         :clustering="true"
@@ -113,6 +114,7 @@ const pointTooltip = (d: TopoJSONMapPoint<Point>) => {
   --vis-font-family: var(--font-sans);
   --vis-map-feature-color: #d4e4e4;
   --vis-map-boundary-color: #eaf2f2;
+  --vis-map-point-label-text-color: #ffffff;
   --vis-tooltip-background-color: transparent;
   --vis-tooltip-border-color: transparent;
 }
@@ -121,6 +123,7 @@ const pointTooltip = (d: TopoJSONMapPoint<Point>) => {
   .vis-country-map {
     --vis-map-feature-color: #2a3838;
     --vis-map-boundary-color: #131a1a;
+    --vis-map-point-label-text-color: #5b5f6d;
   }
 }
 
