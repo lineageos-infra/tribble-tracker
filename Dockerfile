@@ -19,7 +19,7 @@ COPY . .
 RUN cargo build --release
 
 FROM node:24-alpine3.23 AS client
-RUN npm install -g pnpm
+RUN npm install -fg corepack && corepack enable
 WORKDIR /client
 COPY client/package.json client/pnpm-lock.yaml client/pnpm-workspace.yaml .
 RUN pnpm install --frozen-lockfile
