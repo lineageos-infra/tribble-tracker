@@ -5,9 +5,11 @@
 use std::collections::HashMap;
 use std::env;
 use std::fmt;
+use std::str::FromStr;
 
 use serde::Serialize;
 use sqlx::SqlitePool;
+use sqlx::sqlite::SqliteConnectOptions;
 
 #[derive(Clone)]
 pub struct Database {
@@ -113,7 +115,10 @@ impl Database {
     /// Returns a [`DbError`] if connecting to the database or running migrations fails.
     pub async fn new() -> Result<Self, DbError> {
         let database_url = env::var("DATABASE_URL").unwrap_or("sqlite:dev.db".to_string());
-        let pool = SqlitePool::connect(&database_url).await?;
+        let options = SqliteConnectOptions::from_str(&database_url)?
+            .pragma("mmap_size", "1073741824")
+            .pragma("temp_store", "MEMORY");
+        let pool = SqlitePool::connect_with(options).await?;
         sqlx::migrate!().run(&pool).await?;
 
         Ok(Self { pool })
